@@ -8,22 +8,16 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import userData from '../data/user.json'
+import { setCurrentUserEmail } from '../services/userService.js'
 
 /**
- * Hardcoded demo credentials
- * Keys match the role identifiers used throughout the component ('candidate' | 'employer').
+ * Demo credentials loaded from user.json
  * REMOVE THIS before going to production
  */
-const SIGN_IN_USERS = {
-  candidate: {
-    email: 'user@user.com',
-    password: '1',
-  },
-  employer: {
-    email: 'employer@employer.com',
-    password: '1',
-  },
-}
+const SIGN_IN_USERS = Object.fromEntries(
+  userData.users.map(u => [u.role, { email: u.email, password: u.password }])
+)
 
 /** Human-readable labels for each role, used in success/error messages. */
 const ROLE_LABELS = {
@@ -122,6 +116,7 @@ function Login() {
     }
 
     localStorage.setItem('workmate_signed_in', 'true')
+    setCurrentUserEmail(user.email)
     navigate('/', { replace: true })
   }
 

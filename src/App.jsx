@@ -14,11 +14,6 @@
  *   /hr-news, /contact, /portal, /privacy, /terms, /lawyers-corners
  *                → Placeholder (“coming soon”) until real pages exist
  *   *            → Redirect to / for any unknown path
- *
- * To add a new page:
- *   1. Create the component under src/pages/
- *   2. Add a lazy() import here
- *   3. Add a <Route> inside <Routes>
  */
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'

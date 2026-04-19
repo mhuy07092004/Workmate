@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "email": "user@user.com",
+      "password": "1",
+      "role": "candidate",
+      "fullName": "John Candidate",
+      "emailAddress": "user@user.com",
+      "phoneNumber": "",
+      "educationLevel": "Bachelor",
+      "major": "Computer Science",
+      "school": "Tech University",
+      "position": "Software Engineer",
+      "companyName": "",
+      "from": "",
+      "until": "",
+      "about": "Passionate software developer with 3 years of experience in web technologies."
+    },
+    {
+      "email": "employer@employer.com",
+      "password": "1",
+      "role": "employer",
+      "fullName": "Jane Employer",
+      "emailAddress": "employer@employer.com",
+      "phoneNumber": "+1 555-0200",
+      "educationLevel": "Master",
+      "major": "Business Administration",
+      "school": "Business School",
+      "position": "Hiring Manager",
+      "companyName": "TechCorp Inc.",
+      "from": "2020-01",
+      "until": "present",
+      "about": "Experienced hiring manager looking for talented developers to join our growing team."
+    }
+  ]
+}
