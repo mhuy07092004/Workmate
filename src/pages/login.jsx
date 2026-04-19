@@ -1,6 +1,5 @@
 /**
- * home.jsx — Landing page (sign-in / sign-up)
- *
+ * login.jsx — Landing page (sign-in / sign-up)
  *
  * TODO (backend integration):
  *   - Replace SIGN_IN_USERS with a real POST /api/auth/login call
@@ -9,10 +8,10 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './home.css'
+import './login.css'
 
 /**
- * Hardcoded demo credentials 
+ * Hardcoded demo credentials
  * Keys match the role identifiers used throughout the component ('candidate' | 'employer').
  * REMOVE THIS before going to production
  */
@@ -36,13 +35,12 @@ const ROLE_LABELS = {
 /**
  * Normalises a raw role string to either 'employer' or 'candidate'.
  * Treats any string starting with "emp" (case-insensitive) as 'employer'.
- * This guards against minor typos or casing differences from future API responses.
  */
 function normalizeRole(role) {
   return role.trim().toLowerCase().startsWith('emp') ? 'employer' : 'candidate'
 }
 
-function Home() {
+function Login() {
   const navigate = useNavigate()
 
   /** Controls which form tab is shown: 'signin' | 'signup' */
@@ -98,8 +96,7 @@ function Home() {
   /**
    * Sign-in submit handler.
    *
-   * Validates required fields, then checks the submitted credentials against
-   * the mock SIGN_IN_USERS store. On success, redirects to /dashboard.
+   * On success, sets the auth flag in localStorage and redirects to /.
    *
    * Backend integration: replace the credential check with an API call and
    * handle the returned token here.
@@ -125,7 +122,8 @@ function Home() {
       return
     }
 
-    navigate('/dashboard', { replace: true })
+    localStorage.setItem('workmate_signed_in', 'true')
+    navigate('/', { replace: true })
   }
 
   /**
@@ -135,7 +133,7 @@ function Home() {
    * resets the form. Currently no data is persisted.
    *
    * Backend integration: replace the success stub with a POST /api/auth/register
-   * call. On success, either navigate to /dashboard or show a verification prompt.
+   * call. On success, either navigate to / or show a verification prompt.
    */
   const handleSignUpSubmit = (event) => {
     event.preventDefault()
@@ -155,9 +153,9 @@ function Home() {
   }
 
   return (
-    <main className="home-page">
+    <main className="login-page">
       {/* ── Left panel: branding and feature highlights ── */}
-      <section className="home-hero">
+      <section className="login-hero">
         <div className="hero-brand">
           <span className="hero-brand-icon">W</span>
           <span>Workmate</span>
@@ -181,7 +179,7 @@ function Home() {
       </section>
 
       {/* ── Right panel: authentication card ── */}
-      <section className="home-auth-panel">
+      <section className="login-auth-panel">
         <div className="auth-card">
           <h2>Welcome Back</h2>
           <p>Sign in to your account or create a new one</p>
@@ -307,4 +305,4 @@ function Home() {
   )
 }
 
-export default Home
+export default Login

@@ -1,8 +1,8 @@
 /**
- * dashboard.jsx — Post-login main dashboard
+ * dashboard.jsx — Main dashboard (root route)
  *
- * Rendered after a successful sign-in (navigated to from home.jsx).
- * Currently shows a welcome message and three placeholder feature cards.
+ * Accessible to all users. The Navbar conditionally shows a user icon
+ * (signed in) or a "Join Now" button (signed out) based on localStorage.
  *
  * Planned sections (to be built out):
  *   - Recommendation: personalised job/talent suggestions from the matching engine
@@ -12,8 +12,6 @@
  * TODO (backend integration):
  *   - Read the current user from AuthContext (or equivalent) to personalise the greeting
  *   - Fetch recommendation and application data from the API on mount
- *   - Implement tab/query-param routing so each card section is directly linkable
- *     (the Navbar already passes ?tab=<section> query params)
  */
 import Navbar from '../components/Navbar/Navbar.jsx'
 import './dashboard.css'

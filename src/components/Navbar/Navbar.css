@@ -1,97 +1,210 @@
 .workmate-navbar {
-  width: 100%;
-  min-height: 70px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 10px 24px;
+  gap: 16px;
+  padding: 0 24px;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 100;
 }
 
+/* ── Brand logo ── */
 .workmate-logo {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: #0f172a;
 }
 
 .workmate-logo-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  font-weight: 800;
-  color: #ffffff;
-  background: #2563eb;
+  font-weight: 700;
 }
 
 .workmate-logo-text {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #2563eb;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
 }
 
-.workmate-nav-links {
+/* ── Search bar ── */
+.workmate-search-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.workmate-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.workmate-search-bar {
+  width: 100%;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 9px 16px 9px 40px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.workmate-search-bar:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+}
+
+.workmate-search-bar::placeholder {
+  color: #94a3b8;
+}
+
+/* ── Right action zone ── */
+.workmate-nav-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-.nav-link {
-  text-decoration: none;
-  color: #334155;
-  font-weight: 700;
-  padding: 10px 12px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.nav-link:hover {
-  color: #1d4ed8;
-  background: #eff6ff;
-}
-
-.nav-link.active {
-  color: #1d4ed8;
-  background: #dbeafe;
-}
-
-.workmate-user-btn {
-  border: 0;
-  background: transparent;
-  padding: 0;
+/* ── Notification bell ── */
+.workmate-notification-btn {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.workmate-notification-btn:hover {
+  background: #f1f5f9;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+/* ── User avatar button ── */
+.workmate-user-btn {
+  width: 38px;
+  height: 38px;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  background: #1d4ed8;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  padding: 0;
+}
+
+.workmate-user-btn:hover {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 .workmate-user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  background: #2563eb;
-  color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1;
 }
 
-@media (max-width: 900px) {
-  .workmate-navbar {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+/* ── User menu + dropdown ── */
+.workmate-user-menu {
+  position: relative;
+}
 
-  .workmate-nav-links {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
+.workmate-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  list-style: none;
+  margin: 0;
+  z-index: 200;
+}
+
+.workmate-dropdown-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: block;
+}
+
+.workmate-dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.workmate-dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 6px;
+}
+
+.workmate-dropdown-signout {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.workmate-dropdown-signout:hover {
+  background: #fef2f2;
+}
+
+/* ── Join Now button ── */
+.workmate-join-btn {
+  border: 0;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 9px 22px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.workmate-join-btn:hover {
+  background: #2563eb;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }

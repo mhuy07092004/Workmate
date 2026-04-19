@@ -9,8 +9,8 @@
  * lazy chunk is being downloaded.
  *
  * Route map:
- *   /            → Home page (sign-in / sign-up)
- *   /dashboard   → Dashboard page (post-login)
+ *   /            → Dashboard page (main page)
+ *   /login       → Login page (sign-in / sign-up)
  *   *            → Redirect to / for any unknown path
  *
  * To add a new page:
@@ -21,16 +21,16 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-const Home = lazy(() => import('./pages/home.jsx'))
+const Login = lazy(() => import('./pages/login.jsx'))
 const Dashboard = lazy(() => import('./pages/dashboard.jsx'))
 
 function App() {
   return (
     <Suspense fallback={<div className="page-loader">Loading...</div>}>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* Catch-all: redirect unknown paths back to the home/login page */}
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
