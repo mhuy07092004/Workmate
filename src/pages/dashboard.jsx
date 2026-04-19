@@ -15,37 +15,36 @@
  */
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
-import './dashboard.css'
 
 function Dashboard() {
   return (
-    <div className="dashboard-page">
+    <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Top navigation bar — shared across all authenticated pages */}
       <Navbar />
 
-      <main className="dashboard-content">
+      <main className="flex-1 max-w-[1100px] w-full mx-auto px-6 py-8 flex flex-col gap-6">
         {/* Welcome banner */}
-        <section className="dashboard-card">
-          <h1>Welcome to Workmate Dashboard</h1>
-          <p>
+        <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+          <h1 className="mb-2.5 text-[1.6rem] text-slate-900">Welcome to Workmate Dashboard</h1>
+          <p className="text-slate-600 leading-relaxed">
             You are signed in successfully. Use navigation above to browse recommendations,
             applications, and support resources.
           </p>
         </section>
 
         {/* Feature card grid — each card will become a full feature section */}
-        <section className="dashboard-grid">
-          <article className="dashboard-card">
-            <h2>Recommendation</h2>
-            <p>Personalized job or talent suggestions will appear here.</p>
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+            <h2 className="mb-2 text-[1.15rem] text-slate-900">Recommendation</h2>
+            <p className="text-slate-600 leading-relaxed">Personalized job or talent suggestions will appear here.</p>
           </article>
-          <article className="dashboard-card">
-            <h2>Applications</h2>
-            <p>Track your application statuses and activity in one place.</p>
+          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+            <h2 className="mb-2 text-[1.15rem] text-slate-900">Applications</h2>
+            <p className="text-slate-600 leading-relaxed">Track your application statuses and activity in one place.</p>
           </article>
-          <article className="dashboard-card">
-            <h2>Help</h2>
-            <p>Get support and guidance for profile, hiring, or account issues.</p>
+          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+            <h2 className="mb-2 text-[1.15rem] text-slate-900">Help</h2>
+            <p className="text-slate-600 leading-relaxed">Get support and guidance for profile, hiring, or account issues.</p>
           </article>
         </section>
       </main>

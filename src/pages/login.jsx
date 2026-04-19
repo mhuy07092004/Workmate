@@ -8,7 +8,6 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './login.css'
 
 /**
  * Hardcoded demo credentials
@@ -153,68 +152,65 @@ function Login() {
   }
 
   return (
-    <main className="login-page">
+    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* ── Left panel: branding and feature highlights ── */}
-      <section className="login-hero">
-        <div className="hero-brand">
-          <span className="hero-brand-icon">W</span>
+      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-slate-50 px-6 py-9 md:px-12 md:py-14 flex flex-col justify-between">
+        <div className="inline-flex items-center gap-3 text-3xl font-bold">
+          <span className="w-[42px] h-[42px] rounded-[10px] inline-flex justify-center items-center bg-white/20 text-xl">W</span>
           <span>Workmate</span>
         </div>
-        <h1>Find Your Perfect Match</h1>
-        <p>
+        <h1 className="mt-10 mb-0 text-[clamp(2.2rem,4vw,4.2rem)] leading-tight max-w-[380px]">Find Your Perfect Match</h1>
+        <p className="my-[22px] max-w-[460px] text-blue-100 text-xl leading-normal">
           Connect talented professionals with their dream opportunities through intelligent
           matching.
         </p>
 
-        <div className="hero-feature-list">
+        <div className="grid gap-6">
           <article>
-            <h3>Two-Way Matching</h3>
-            <p>Candidates find jobs, employers find talent.</p>
+            <h3 className="mb-1.5 text-[1.3rem]">Two-Way Matching</h3>
+            <p className="text-blue-100">Candidates find jobs, employers find talent.</p>
           </article>
           <article>
-            <h3>Smart Recommendations</h3>
-            <p>AI-powered matching based on skills and requirements.</p>
+            <h3 className="mb-1.5 text-[1.3rem]">Smart Recommendations</h3>
+            <p className="text-blue-100">AI-powered matching based on skills and requirements.</p>
           </article>
         </div>
       </section>
 
-      {/* ── Right panel: authentication card ── */}
-      <section className="login-auth-panel">
-        <div className="auth-card">
-          <h2>Welcome Back</h2>
-          <p>Sign in to your account or create a new one</p>
+      <section className="bg-gray-100 grid place-items-center p-6">
+        <div className="w-full max-w-[520px] bg-white rounded-2xl p-8 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+          <h2 className="m-0 text-center text-3xl">Welcome Back</h2>
+          <p className="my-3 text-center text-slate-500">Sign in to your account or create a new one</p>
 
-          {/* Tab switcher: toggles between Sign In and Sign Up forms */}
-          <div className="auth-tab-switcher" role="tablist" aria-label="Authentication tabs">
+          <div className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5" role="tablist" aria-label="Authentication tabs">
             <button
               type="button"
-              className={activeTab === 'signin' ? 'active' : ''}
+              className={`border-0 rounded-full text-base font-bold py-2.5 bg-transparent text-slate-700 cursor-pointer ${activeTab === 'signin' ? 'bg-white text-slate-900 shadow-[0_2px_12px_rgba(15,23,42,0.08)]' : ''}`}
               onClick={() => handleTabChange('signin')}
             >
               Sign In
             </button>
             <button
               type="button"
-              className={activeTab === 'signup' ? 'active' : ''}
+              className={`border-0 rounded-full text-base font-bold py-2.5 bg-transparent text-slate-700 cursor-pointer ${activeTab === 'signup' ? 'bg-white text-slate-900 shadow-[0_2px_12px_rgba(15,23,42,0.08)]' : ''}`}
               onClick={() => handleTabChange('signup')}
             >
               Sign Up
             </button>
           </div>
 
-          {/* Role switcher: determines which mock user to authenticate against */}
-          <p className="role-helper">I am a:</p>
-          <div className="role-switcher">
+          <p className="mt-4 mb-2.5 text-slate-700 font-bold">I am a:</p>
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className={selectedRole === 'candidate' ? 'active' : ''}
+              className={`border-[1.5px] border-slate-300 rounded-xl bg-white text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'candidate' ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}`}
               onClick={() => handleRoleChange('candidate')}
             >
               Candidate
             </button>
             <button
               type="button"
-              className={selectedRole === 'employer' ? 'active' : ''}
+              className={`border-[1.5px] border-slate-300 rounded-xl bg-white text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'employer' ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}`}
               onClick={() => handleRoleChange('employer')}
             >
               Employer
@@ -223,8 +219,8 @@ function Login() {
 
           {/* Conditionally render sign-in or sign-up form based on active tab */}
           {activeTab === 'signin' ? (
-            <form className="auth-form" onSubmit={handleSignInSubmit}>
-              <label htmlFor="signin-email">Email Address</label>
+            <form className="mt-5 grid gap-2" onSubmit={handleSignInSubmit}>
+              <label htmlFor="signin-email" className="mt-1 text-slate-700 font-bold">Email Address</label>
               <input
                 id="signin-email"
                 type="email"
@@ -233,9 +229,10 @@ function Login() {
                 onChange={(event) =>
                   setSignInForm((prev) => ({ ...prev, email: event.target.value }))
                 }
+                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <label htmlFor="signin-password">Password</label>
+              <label htmlFor="signin-password" className="mt-1 text-slate-700 font-bold">Password</label>
               <input
                 id="signin-password"
                 type="password"
@@ -244,16 +241,16 @@ function Login() {
                 onChange={(event) =>
                   setSignInForm((prev) => ({ ...prev, password: event.target.value }))
                 }
+                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <button type="submit" className="primary-btn">
+              <button type="submit" className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800">
                 Sign In
               </button>
             </form>
           ) : (
-            <form className="auth-form" onSubmit={handleSignUpSubmit}>
-              {/* Label switches between "Full Name" and "Company Name" based on role */}
-              <label htmlFor="signup-name">{signUpLabel}</label>
+            <form className="mt-5 grid gap-2" onSubmit={handleSignUpSubmit}>
+              <label htmlFor="signup-name" className="mt-1 text-slate-700 font-bold">{signUpLabel}</label>
               <input
                 id="signup-name"
                 type="text"
@@ -262,9 +259,10 @@ function Login() {
                 onChange={(event) =>
                   setSignUpForm((prev) => ({ ...prev, nameOrCompany: event.target.value }))
                 }
+                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <label htmlFor="signup-email">Email Address</label>
+              <label htmlFor="signup-email" className="mt-1 text-slate-700 font-bold">Email Address</label>
               <input
                 id="signup-email"
                 type="email"
@@ -273,9 +271,10 @@ function Login() {
                 onChange={(event) =>
                   setSignUpForm((prev) => ({ ...prev, email: event.target.value }))
                 }
+                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <label htmlFor="signup-password">Password</label>
+              <label htmlFor="signup-password" className="mt-1 text-slate-700 font-bold">Password</label>
               <input
                 id="signup-password"
                 type="password"
@@ -284,19 +283,20 @@ function Login() {
                 onChange={(event) =>
                   setSignUpForm((prev) => ({ ...prev, password: event.target.value }))
                 }
+                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <button type="submit" className="primary-btn">
+              <button type="submit" className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800">
                 Sign Up
               </button>
             </form>
           )}
 
           {/* Feedback banners — only one is visible at a time */}
-          {error ? <p className="auth-feedback auth-error">{error}</p> : null}
-          {success ? <p className="auth-feedback auth-success">{success}</p> : null}
+          {error ? <p className="mt-3.5 text-[0.95rem] font-semibold text-red-600">{error}</p> : null}
+          {success ? <p className="mt-3.5 text-[0.95rem] font-semibold text-green-700">{success}</p> : null}
 
-          <p className="auth-policy">
+          <p className="mt-4 text-[0.88rem] text-slate-500">
             By continuing, you agree to Workmate&apos;s Terms of Service and Privacy Policy.
           </p>
         </div>
