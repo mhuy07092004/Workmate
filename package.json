@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --config config/vite.config.js",
+    "build": "vite build --config config/vite.config.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --config config/vite.config.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
