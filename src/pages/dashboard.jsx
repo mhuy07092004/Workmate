@@ -15,6 +15,22 @@
  */
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
+import FeatureCardGrid from '../components/Button/Profile_Button.jsx'
+
+const FEATURE_CARDS = [
+  {
+    title: 'Recommendation',
+    description: 'Personalized job or talent suggestions will appear here.',
+  },
+  {
+    title: 'Applications',
+    description: 'Track your application statuses and activity in one place.',
+  },
+  {
+    title: 'Help',
+    description: 'Get support and guidance for profile, hiring, or account issues.',
+  },
+]
 
 function Dashboard() {
   return (
@@ -33,20 +49,7 @@ function Dashboard() {
         </section>
 
         {/* Feature card grid — each card will become a full feature section */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-            <h2 className="mb-2 text-[1.15rem] text-slate-900">Recommendation</h2>
-            <p className="text-slate-600 leading-relaxed">Personalized job or talent suggestions will appear here.</p>
-          </article>
-          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-            <h2 className="mb-2 text-[1.15rem] text-slate-900">Applications</h2>
-            <p className="text-slate-600 leading-relaxed">Track your application statuses and activity in one place.</p>
-          </article>
-          <article className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-            <h2 className="mb-2 text-[1.15rem] text-slate-900">Help</h2>
-            <p className="text-slate-600 leading-relaxed">Get support and guidance for profile, hiring, or account issues.</p>
-          </article>
-        </section>
+        <FeatureCardGrid cards={FEATURE_CARDS} />
       </main>
 
       <Footer />
