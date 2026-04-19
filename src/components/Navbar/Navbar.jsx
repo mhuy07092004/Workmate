@@ -13,12 +13,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const DROPDOWN_ITEMS = [
-  { label: 'Your Profile', key: 'profile' },
-  { label: 'Settings', key: 'settings' },
+  { label: 'Your Profile', key: 'profile', path: '/profile' },
+  { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'My Applications', key: 'applications' },
   { label: 'Messages', key: 'messages' },
   { label: 'My Networks', key: 'networks' },
-  { label: 'Post', key: 'post' },
+  { label: 'Post', key: 'post', path: '/post' },
 ]
 
 const dropdownItemClass =
@@ -142,7 +142,10 @@ function Navbar() {
                         type="button"
                         role="menuitem"
                         className={dropdownItemClass}
-                        onClick={() => setDropdownOpen(false)}
+                        onClick={() => {
+                          setDropdownOpen(false)
+                          if (item.path) navigate(item.path)
+                        }}
                       >
                         {item.label}
                       </button>

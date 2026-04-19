@@ -26,6 +26,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 const Login = lazy(() => import('./pages/login.jsx'))
 const Dashboard = lazy(() => import('./pages/dashboard.jsx'))
 const PlaceholderPage = lazy(() => import('./pages/placeholder.jsx'))
+const Profile = lazy(() => import('./pages/profile.jsx'))
+const Settings = lazy(() => import('./pages/settings.jsx'))
+const Post = lazy(() => import('./pages/post.jsx'))
 
 function App() {
   return (
@@ -39,6 +42,9 @@ function App() {
         <Route path="/privacy" element={<PlaceholderPage />} />
         <Route path="/terms" element={<PlaceholderPage />} />
         <Route path="/lawyers-corners" element={<PlaceholderPage />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/post" element={<Post />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
