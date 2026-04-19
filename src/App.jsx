@@ -11,6 +11,8 @@
  * Route map:
  *   /            → Dashboard page (main page)
  *   /login       → Login page (sign-in / sign-up)
+ *   /hr-news, /contact, /portal, /privacy, /terms, /lawyers-corners
+ *                → Placeholder (“coming soon”) until real pages exist
  *   *            → Redirect to / for any unknown path
  *
  * To add a new page:
@@ -23,6 +25,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 const Login = lazy(() => import('./pages/login.jsx'))
 const Dashboard = lazy(() => import('./pages/dashboard.jsx'))
+const PlaceholderPage = lazy(() => import('./pages/placeholder.jsx'))
 
 function App() {
   return (
@@ -30,6 +33,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/hr-news" element={<PlaceholderPage />} />
+        <Route path="/contact" element={<PlaceholderPage />} />
+        <Route path="/portal" element={<PlaceholderPage />} />
+        <Route path="/privacy" element={<PlaceholderPage />} />
+        <Route path="/terms" element={<PlaceholderPage />} />
+        <Route path="/lawyers-corners" element={<PlaceholderPage />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -13,6 +13,7 @@
  *   - Read the current user from AuthContext (or equivalent) to personalise the greeting
  *   - Fetch recommendation and application data from the API on mount
  */
+import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import './dashboard.css'
 
@@ -48,6 +49,8 @@ function Dashboard() {
           </article>
         </section>
       </main>
+
+      <Footer />
     </div>
   )
 }
