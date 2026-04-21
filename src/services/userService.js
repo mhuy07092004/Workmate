@@ -1,12 +1,8 @@
 /**
- * User Service - Mock backend API for user data
+ * User Service - Basic user data retrieval
  * 
- * This service mimics real backend endpoints, making it easy to
- * replace with actual API calls when connecting to a database.
- * 
- * TODO (backend integration):
- *   - Replace with fetch() calls to real endpoints
- *   - Add JWT token from localStorage to request headers
+ * This service provides user data lookup functionality.
+ * Backend integration: Replace with actual API calls when connecting to a database.
  */
 import userData from '../data/user.json'
 
@@ -53,45 +49,3 @@ export function getCurrentUser() {
   return findUserByEmail(email)
 }
 
-/**
- * Update user data
- * Mimics: PUT /api/users/me
- * 
- * Note: Since we can't write to JSON files in the browser,
- * this updates localStorage. Backend dev should replace this
- * with a real API call.
- */
-export function updateUser(email, newData) {
-  const user = findUserByEmail(email)
-  if (!user) {
-    throw new Error('User not found')
-  }
-  
-  // Merge new data with existing user
-  const updatedUser = { ...user, ...newData }
-  
-  // Store updated user in localStorage as "saved profile"
-  // Backend: Replace with PUT /api/users/me
-  localStorage.setItem(`workmate_user_${email}`, JSON.stringify(updatedUser))
-  
-  return updatedUser
-}
-
-/**
- * Get user data, preferring saved data from localStorage
- * Falls back to the original user.json data
- */
-export function getUserWithSavedData(email) {
-  if (!email) return null
-  
-  const baseUser = findUserByEmail(email)
-  if (!baseUser) return null
-  
-  // Check for saved profile data
-  const savedData = localStorage.getItem(`workmate_user_${email}`)
-  if (savedData) {
-    return { ...baseUser, ...JSON.parse(savedData) }
-  }
-  
-  return baseUser
-}
