@@ -95,17 +95,25 @@ function Dashboard() {
             ))}
           </div>
           
-          {/* Show More button */}
-          {visibleJobs < MOCK_JOBS.length && (
-            <div className="flex justify-center">
+          {/* Show More/Show Less buttons */}
+          <div className="flex justify-center gap-3">
+            {visibleJobs < MOCK_JOBS.length && (
               <button
                 onClick={handleShowMore}
                 className="cursor-pointer rounded-full border-0 bg-blue-700 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-blue-600 hover:shadow-[0_4px_14px_rgba(37,99,235,0.3)]"
               >
                 Show More Jobs
               </button>
-            </div>
-          )}
+            )}
+            {visibleJobs > 6 && (
+              <button
+                onClick={() => setVisibleJobs(6)}
+                className="cursor-pointer rounded-full border-0 bg-slate-600 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-slate-700 hover:shadow-[0_4px_14px_rgba(71,85,105,0.3)]"
+              >
+                Show Less Jobs
+              </button>
+            )}
+          </div>
         </section>
 
         {/* Hiring News Section */}

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom'
 const DROPDOWN_ITEMS = [
   { label: 'Your Profile', key: 'profile', path: '/profile' },
   { label: 'Settings', key: 'settings', path: '/settings' },
-  { label: 'My Applications', key: 'applications' },
+  { label: 'My Applications', key: 'applications', path: '/applications' },
   { label: 'Messages', key: 'messages' },
   { label: 'My Networks', key: 'networks' },
   { label: 'Post', key: 'post', path: '/post' },

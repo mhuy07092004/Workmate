@@ -24,6 +24,7 @@ const PlaceholderPage = lazy(() => import('./pages/placeholder.jsx'))
 const Profile = lazy(() => import('./pages/profile.jsx'))
 const Settings = lazy(() => import('./pages/settings.jsx'))
 const Post = lazy(() => import('./pages/post.jsx'))
+const Applications = lazy(() => import('./pages/applications.jsx'))
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/post" element={<Post />} />
+        <Route path="/applications" element={<Applications />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
