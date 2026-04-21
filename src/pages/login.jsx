@@ -198,14 +198,14 @@ function Login() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className={`border-[1.5px] border-slate-300 rounded-xl bg-white text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'candidate' ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}`}
+              className={`border-[1.5px] border-slate-300 rounded-xl text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'candidate' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'bg-white'}`}
               onClick={() => handleRoleChange('candidate')}
             >
               Candidate
             </button>
             <button
               type="button"
-              className={`border-[1.5px] border-slate-300 rounded-xl bg-white text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'employer' ? 'border-blue-600 bg-blue-50 text-blue-700' : ''}`}
+              className={`border-[1.5px] border-slate-300 rounded-xl text-slate-900 text-base font-bold py-4 px-3 cursor-pointer ${selectedRole === 'employer' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'bg-white'}`}
               onClick={() => handleRoleChange('employer')}
             >
               Employer
