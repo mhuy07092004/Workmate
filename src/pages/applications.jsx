@@ -14,10 +14,10 @@ import JobCard from '../components/JobCard/JobCard'
 const savedJobs = [
   {
     id: 1,
-    title: 'Senior Frontend Developer',
+    title: 'Fresher Fronrestend Developer',
     company: 'TechCorp',
     type: 'Full-time',
-    location: 'San Francisco, CA',
+    location: 'Sydeny,NSW',
     postedTime: 'Posted 2 days ago'
   },
   {
@@ -33,7 +33,7 @@ const savedJobs = [
     title: 'UI/UX Engineer',
     company: 'DesignHub',
     type: 'Contract',
-    location: 'New York, NY',
+    location: 'Melbourne,VIC',
     postedTime: 'Posted 3 days ago'
   }
 ]
@@ -45,7 +45,7 @@ const appliedJobs = [
     title: 'Full Stack Developer',
     company: 'Innovation Labs',
     type: 'Full-time',
-    location: 'Austin, TX',
+    location: 'Perth,WA',
     postedTime: 'Posted 1 day ago'
   },
   {
@@ -53,7 +53,7 @@ const appliedJobs = [
     title: 'JavaScript Developer',
     company: 'WebSolutions',
     type: 'Full-time',
-    location: 'Seattle, WA',
+    location: 'Sydney, NSW',
     postedTime: 'Posted 4 days ago'
   }
 ]
