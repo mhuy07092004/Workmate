@@ -57,12 +57,16 @@ function Navbar() {
   return (
     <header className="sticky top-0 z-[100] flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
       {/* Brand logo */}
-      <div className="flex shrink-0 items-center gap-2.5 text-slate-900 no-underline">
+      <button
+        type="button"
+        onClick={() => navigate('/dashboard')}
+        className="flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 text-slate-900 no-underline"
+      >
         <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue-700 text-base font-bold text-white">
           W
         </span>
         <span className="text-[1.15rem] font-bold text-slate-900">Workmate</span>
-      </div>
+      </button>
 
       {/* Center: search bar */}
       <div className="relative mx-auto flex max-w-[480px] flex-1 items-center">
