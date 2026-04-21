@@ -14,7 +14,7 @@ import JobCard from '../components/JobCard/JobCard'
 const savedJobs = [
   {
     id: 1,
-    title: 'Fresher Fronrestend Developer',
+    title: 'Fresher Frontend Developer',
     company: 'TechCorp',
     type: 'Full-time',
     location: 'Sydeny,NSW',
