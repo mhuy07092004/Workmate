@@ -17,6 +17,7 @@ import { useState } from 'react'
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
+import NewsCard from '../components/NewsCard/NewsCard.jsx'
 
 // Mock job data
 const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
@@ -27,6 +28,34 @@ const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
   location: 'Sydney, NSW',
   postedTime: 'Posted 3 weeks ago'
 }))
+
+// Mock news data
+const MOCK_NEWS = [
+  {
+    id: 1,
+    headline: 'ParkIT Just Hired 20 Fresher Software Engineers!',
+    company: 'ParkIT',
+    postedTime: '2 days ago'
+  },
+  {
+    id: 1,
+    headline: 'Workmate Just Opens New Office in Wollongong with 50+ Positions',
+    company: 'Workmate',
+    postedTime: '3 days ago'
+  },
+  {
+    id: 3,
+    headline: 'SpaceX Raises $10M in Series A Funding',
+    company: 'SpaceX',
+    postedTime: '1 week ago'
+  },
+  {
+    id: 4,
+    headline: 'Amazon is looking for thoundsands of A.I Engineers',
+    company: 'Amazon',
+    postedTime: '1 week ago'
+  }
+]
 
 function Dashboard() {
   const [visibleJobs, setVisibleJobs] = useState(6)
@@ -80,13 +109,17 @@ function Dashboard() {
         </section>
 
         {/* Hiring News Section */}
-        <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-          <div className="mb-4">
+        <section>
+          <div className="mb-6">
             <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Hiring News</h2>
             <p className="text-slate-600">Stay updated with the latest hiring trends and company news</p>
           </div>
-          <div className="text-center py-8 text-slate-400">
-            <p>Hiring news content will be available soon</p>
+          
+          {/* News cards - single column layout */}
+          <div className="space-y-4">
+            {MOCK_NEWS.map(news => (
+              <NewsCard key={news.id} news={news} />
+            ))}
           </div>
         </section>
 
