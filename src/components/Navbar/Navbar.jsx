@@ -34,14 +34,14 @@ const EMPLOYER_DROPDOWN_ITEMS = [
 const CANDIDATE_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
   { label: 'Recommended Jobs', path: '/recommended-jobs' },
-  { label: 'Help', path: '/contact' },
+  { label: 'Help', path: './pages/help.jsx' },
 ]
 
 /** Navigation buttons for employers */
 const EMPLOYER_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
-  { label: 'Help', path: '/contact' },
+  { label: 'Help', path: './pages/help.jsx' },
 ]
 
 // BACKEND DEV NOTE: Replace with API call to fetch real notifications

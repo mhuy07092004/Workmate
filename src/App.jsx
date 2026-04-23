@@ -11,7 +11,8 @@
  * Route map:
  *   /            → Dashboard page (main page)
  *   /login       → Login page (sign-in / sign-up)
- *   /hr-news, /contact, /portal, /privacy, /terms, /lawyers-corners
+ *   /contact     → Help/Support page (FAQ + Contact info)
+ *   /hr-news, /portal, /privacy, /terms, /lawyers-corners
  *                → Placeholder (“coming soon”) until real pages exist
  *   *            → Redirect to / for any unknown path
  */
@@ -25,6 +26,7 @@ const Profile = lazy(() => import('./pages/profile.jsx'))
 const Settings = lazy(() => import('./pages/settings.jsx'))
 const Post = lazy(() => import('./pages/post.jsx'))
 const Applications = lazy(() => import('./pages/applications.jsx'))
+const Help = lazy(() => import('./pages/help.jsx'))
 
 function App() {
   return (
@@ -33,7 +35,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
-        <Route path="/contact" element={<PlaceholderPage />} />
+        <Route path="/contact" element={<Help />} />
         <Route path="/recommended-candidates" element={<PlaceholderPage />} />
         <Route path="/recommended-jobs" element={<PlaceholderPage />} />
         <Route path="/portal" element={<PlaceholderPage />} />
