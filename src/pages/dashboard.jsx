@@ -18,6 +18,7 @@ import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
 import NewsCard from '../components/NewsCard/NewsCard.jsx'
+import Contact from '../components/Contact/Contact.jsx'
 
 // Mock job data
 const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
@@ -71,7 +72,12 @@ function Dashboard() {
       {/* Top navigation bar — shared across all authenticated pages */}
       <Navbar />
 
-      <main className="flex-1 max-w-[1100px] w-full mx-auto px-6 py-8 flex flex-col gap-8">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-6">
+        {/* Left sidebar - Contact (sticky) */}
+        <Contact />
+
+        {/* Middle column - Main content (scrollable) */}
+        <div className="flex-1 min-w-0 flex flex-col gap-8">
         {/* Welcome banner */}
         <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
           <h1 className="mb-2.5 text-[1.6rem] text-slate-900">Welcome to Workmate Dashboard</h1>
@@ -141,6 +147,10 @@ function Dashboard() {
             <p>Posts content will be available soon</p>
           </div>
         </section>
+        </div>
+
+        {/* Right column - Empty placeholder */}
+        <div className="w-[240px] shrink-0 hidden xl:block" />
       </main>
 
       <Footer />
