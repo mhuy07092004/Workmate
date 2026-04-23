@@ -9,6 +9,8 @@
 import Navbar from '../components/Navbar/Navbar'
 import Footer from '../components/Footer/Footer'
 import JobCard from '../components/JobCard/JobCard'
+import CandidateCard from '../components/CandidateCard/CandidateCard'
+import { getCurrentUserRole } from '../services/userService.js'
 
 // Sample data for saved jobs
 const savedJobs = [
@@ -58,28 +60,63 @@ const appliedJobs = [
   }
 ]
 
+// Sample data for saved candidates (employer view)
+const savedCandidates = [
+  {
+    id: 1,
+    fullName: 'John Smith',
+    location: 'Sydney, NSW'
+  },
+  {
+    id: 2,
+    fullName: 'Sarah Johnson',
+    location: 'Melbourne, VIC'
+  },
+  {
+    id: 3,
+    fullName: 'Michael Chen',
+    location: 'Brisbane, QLD'
+  },
+  {
+    id: 4,
+    fullName: 'Emily Davis',
+    location: 'Perth, WA'
+  }
+]
+
 function Applications() {
+  const userRole = getCurrentUserRole()
+  const isEmployer = userRole === 'employer'
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Navigation/Header */}
       <Navbar />
-      
+
       {/* Main Content */}
       <main className="flex-1">
         <div className="max-w-[1120px] mx-auto px-6 py-8">
           {/* Page Title */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">My Applications</h1>
-            <p className="text-slate-600">Manage your saved jobs and application history</p>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              {isEmployer ? 'Applicants' : 'My Applications'}
+            </h1>
+            {!isEmployer && (
+              <p className="text-slate-600">Manage your saved jobs and application history</p>
+            )}
           </div>
 
-          {/* Save Jobs Section */}
+          {/* Saved Jobs / Your Posted Job Section */}
           <section className="mb-12">
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-2">Saved Jobs</h2>
-              <p className="text-slate-600">Jobs you've saved for later review</p>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+                {isEmployer ? 'Your Posted Job' : 'Saved Jobs'}
+              </h2>
+              <p className="text-slate-600">
+                {isEmployer ? 'Jobs you have posted for applicants' : "Jobs you've saved for later review"}
+              </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {savedJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
@@ -87,17 +124,27 @@ function Applications() {
             </div>
           </section>
 
-          {/* Jobs Applied Section */}
+          {/* Jobs Applied / Saved Candidates Section */}
           <section>
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-2">Jobs Applied</h2>
-              <p className="text-slate-600">Track your job application status</p>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+                {isEmployer ? 'Saved Candidates' : 'Jobs Applied'}
+              </h2>
+              <p className="text-slate-600">
+                {isEmployer ? 'Candidates you have saved for review' : 'Track your job application status'}
+              </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {appliedJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
+              {isEmployer ? (
+                savedCandidates.map((candidate) => (
+                  <CandidateCard key={candidate.id} candidate={candidate} />
+                ))
+              ) : (
+                appliedJobs.map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))
+              )}
             </div>
           </section>
         </div>

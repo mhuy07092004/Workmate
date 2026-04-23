@@ -9,7 +9,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import userData from '../data/user.json'
-import { setCurrentUserEmail } from '../services/userService.js'
+import { setCurrentUserEmail, setCurrentUserRole } from '../services/userService.js'
 
 /**
  * Demo credentials loaded from user.json
@@ -117,6 +117,7 @@ function Login() {
 
     localStorage.setItem('workmate_signed_in', 'true')
     setCurrentUserEmail(user.email)
+    setCurrentUserRole(roleKey)
     navigate('/', { replace: true })
   }
 

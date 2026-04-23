@@ -9,15 +9,26 @@
  * Auth state is read from localStorage ('workmate_signed_in').
  * Sign-out clears localStorage and redirects to /login.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { clearCurrentUser, getCurrentUserRole } from '../../services/userService.js'
 
-const DROPDOWN_ITEMS = [
+/** Dropdown items for candidates */
+const CANDIDATE_DROPDOWN_ITEMS = [
   { label: 'Your Profile', key: 'profile', path: '/profile' },
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'My Applications', key: 'applications', path: '/applications' },
   { label: 'Messages', key: 'messages' },
   { label: 'My Networks', key: 'networks' },
+  { label: 'Post', key: 'post', path: '/post' },
+]
+
+/** Dropdown items for employers */
+const EMPLOYER_DROPDOWN_ITEMS = [
+  { label: 'Your Profile', key: 'profile', path: '/profile' },
+  { label: 'Settings', key: 'settings', path: '/settings' },
+  { label: 'Applicants', key: 'applications', path: '/applications' },
+  { label: 'Messages', key: 'messages' },
   { label: 'Post', key: 'post', path: '/post' },
 ]
 
@@ -33,8 +44,15 @@ function Navbar() {
   const [isSignedIn, setIsSignedIn] = useState(
     () => localStorage.getItem('workmate_signed_in') === 'true',
   )
+  const [userRole, setUserRole] = useState(() => getCurrentUserRole())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
+
+  const searchPlaceholder = userRole === 'employer' ? 'Search Candidates' : 'Search Jobs'
+
+  const dropdownItems = useMemo(() => {
+    return userRole === 'employer' ? EMPLOYER_DROPDOWN_ITEMS : CANDIDATE_DROPDOWN_ITEMS
+  }, [userRole])
 
   /** Close dropdown when clicking outside */
   useEffect(() => {
@@ -49,6 +67,7 @@ function Navbar() {
 
   const handleSignOut = () => {
     localStorage.removeItem('workmate_signed_in')
+    clearCurrentUser()
     setIsSignedIn(false)
     setDropdownOpen(false)
     navigate('/login', { replace: true })
@@ -91,7 +110,7 @@ function Navbar() {
         <input
           className="w-full rounded-full border-[1.5px] border-slate-200 bg-slate-50 py-[9px] pr-4 pl-10 text-[0.95rem] text-slate-900 outline-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
           type="search"
-          placeholder="Search Job"
+          placeholder={searchPlaceholder}
           aria-label="Search jobs"
         />
       </div>
@@ -140,7 +159,7 @@ function Navbar() {
                   className="absolute top-[calc(100%+10px)] right-0 z-[200] m-0 min-w-[200px] list-none rounded-xl border border-gray-200 bg-white p-1.5 shadow-[0_8px_30px_rgba(15,23,42,0.12)]"
                   role="menu"
                 >
-                  {DROPDOWN_ITEMS.map((item) => (
+                  {dropdownItems.map((item) => (
                     <li key={item.key} role="none">
                       <button
                         type="button"

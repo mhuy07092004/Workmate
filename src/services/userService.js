@@ -7,6 +7,7 @@
 import userData from '../data/user.json'
 
 const STORAGE_KEY = 'workmate_current_user_email'
+const ROLE_KEY = 'workmate_user_role'
 
 /**
  * Get the currently logged-in user's email from localStorage
@@ -29,6 +30,23 @@ export function setCurrentUserEmail(email) {
  */
 export function clearCurrentUser() {
   localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(ROLE_KEY)
+}
+
+/**
+ * Get the current user's role from localStorage
+ * Returns null if no user is logged in
+ */
+export function getCurrentUserRole() {
+  return localStorage.getItem(ROLE_KEY)
+}
+
+/**
+ * Set the current user's role in localStorage
+ * Called after successful login
+ */
+export function setCurrentUserRole(role) {
+  localStorage.setItem(ROLE_KEY, role)
 }
 
 /**
