@@ -34,6 +34,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
         <Route path="/contact" element={<PlaceholderPage />} />
+        <Route path="/recommended-candidates" element={<PlaceholderPage />} />
+        <Route path="/recommended-jobs" element={<PlaceholderPage />} />
         <Route path="/portal" element={<PlaceholderPage />} />
         <Route path="/privacy" element={<PlaceholderPage />} />
         <Route path="/terms" element={<PlaceholderPage />} />

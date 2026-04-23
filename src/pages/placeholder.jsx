@@ -9,6 +9,8 @@ const TITLES = {
   '/privacy': 'Privacy Policy',
   '/terms': 'Terms of Service',
   '/lawyers-corners': "Lawyer's Corners",
+  '/recommended-candidates': 'Recommended Candidates',
+  '/recommended-jobs': 'Recommended Jobs',
 }
 
 function PlaceholderPage() {

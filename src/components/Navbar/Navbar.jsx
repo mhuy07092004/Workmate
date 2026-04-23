@@ -18,7 +18,6 @@ const CANDIDATE_DROPDOWN_ITEMS = [
   { label: 'Your Profile', key: 'profile', path: '/profile' },
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'My Applications', key: 'applications', path: '/applications' },
-  { label: 'Messages', key: 'messages' },
   { label: 'My Networks', key: 'networks' },
   { label: 'Post', key: 'post', path: '/post' },
 ]
@@ -28,8 +27,30 @@ const EMPLOYER_DROPDOWN_ITEMS = [
   { label: 'Your Profile', key: 'profile', path: '/profile' },
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'Applicants', key: 'applications', path: '/applications' },
-  { label: 'Messages', key: 'messages' },
   { label: 'Post', key: 'post', path: '/post' },
+]
+
+/** Navigation buttons for candidates */
+const CANDIDATE_NAV_BUTTONS = [
+  { label: 'Home', path: '/dashboard' },
+  { label: 'Recommended Jobs', path: '/recommended-jobs' },
+  { label: 'Help', path: '/contact' },
+]
+
+/** Navigation buttons for employers */
+const EMPLOYER_NAV_BUTTONS = [
+  { label: 'Home', path: '/dashboard' },
+  { label: 'Recommended Candidates', path: '/recommended-candidates' },
+  { label: 'Help', path: '/contact' },
+]
+
+// BACKEND DEV NOTE: Replace with API call to fetch real notifications
+// GET /api/notifications?limit=4&sort=recent
+const MOCK_NOTIFICATIONS = [
+  { id: 1, text: 'Hayden Loi Just got his first job !', time: '10m ago', unread: true },
+  { id: 2, text: 'SpaceX just launch a new Robot', time: '1h ago', unread: true },
+  { id: 3, text: 'Minh just applied to "Fresher Front..."', time: '2h ago', unread: true },
+  { id: 4, text: 'Your Post Reached 1000 candidates', time: '4d ago', unread: false },
 ]
 
 const dropdownItemClass =
@@ -46,7 +67,9 @@ function Navbar() {
   )
   const [userRole, setUserRole] = useState(() => getCurrentUserRole())
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const notificationsRef = useRef(null)
 
   const searchPlaceholder = userRole === 'employer' ? 'Search Candidates' : 'Search Jobs'
 
@@ -54,11 +77,22 @@ function Navbar() {
     return userRole === 'employer' ? EMPLOYER_DROPDOWN_ITEMS : CANDIDATE_DROPDOWN_ITEMS
   }, [userRole])
 
-  /** Close dropdown when clicking outside */
+  const navButtons = useMemo(() => {
+    return userRole === 'employer' ? EMPLOYER_NAV_BUTTONS : CANDIDATE_NAV_BUTTONS
+  }, [userRole])
+
+  const unreadCount = useMemo(() => {
+    return MOCK_NOTIFICATIONS.filter(n => n.unread).length
+  }, [])
+
+  /** Close dropdowns when clicking outside */
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false)
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setNotificationsOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -119,26 +153,66 @@ function Navbar() {
       <div className="flex shrink-0 items-center gap-2">
         {isSignedIn ? (
           <>
-            {/* Notification bell */}
-            <button
-              type="button"
-              className="flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-full border-[1.5px] border-slate-200 bg-white text-slate-600 transition-colors hover:border-blue-200 hover:bg-slate-100 hover:text-blue-700"
-              aria-label="Notifications"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {/* Role-based navigation buttons */}
+            {navButtons.map((btn) => (
+              <button
+                key={btn.path}
+                type="button"
+                onClick={() => navigate(btn.path)}
+                className="cursor-pointer rounded-full border-0 bg-transparent px-3 py-2 text-[0.9rem] font-medium text-slate-600 transition-colors hover:text-blue-700"
               >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </button>
+                {btn.label}
+              </button>
+            ))}
+
+            {/* Notification bell */}
+            <div className="relative" ref={notificationsRef}>
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen((prev) => !prev)}
+                className="flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-full border-[1.5px] border-slate-200 bg-white text-slate-600 transition-colors hover:border-blue-200 hover:bg-slate-100 hover:text-blue-700"
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[0.65rem] font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute top-[calc(100%+10px)] right-0 z-[200] min-w-[320px] rounded-xl border border-gray-200 bg-white p-0 shadow-[0_8px_30px_rgba(15,23,42,0.12)]">
+                  <div className="border-b border-gray-100 px-4 py-3">
+                    <h3 className="text-[0.95rem] font-semibold text-slate-900">Notifications</h3>
+                  </div>
+                  <ul className="m-0 max-h-[320px] list-none overflow-y-auto p-0">
+                    {MOCK_NOTIFICATIONS.map((notification) => (
+                      <li
+                        key={notification.id}
+                        className={`cursor-pointer border-b border-gray-50 px-4 py-3 transition-colors last:border-b-0 hover:bg-slate-50 ${notification.unread ? 'bg-blue-50/50' : ''}`}
+                      >
+                        <p className="m-0 text-[0.9rem] leading-snug text-slate-800">{notification.text}</p>
+                        <p className="m-0 mt-1 text-[0.75rem] text-slate-500">{notification.time}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             {/* User avatar + dropdown */}
             <div className="relative" ref={dropdownRef}>
