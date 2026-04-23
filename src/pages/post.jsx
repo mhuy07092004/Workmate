@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import PostCard from '../components/PostCard/PostCard.jsx'
+import Contact from '../components/Contact/Contact.jsx'
 
 // Sample posts data - will be replaced by backend later
 const SAMPLE_POSTS = [
@@ -18,7 +19,7 @@ const SAMPLE_POSTS = [
     author: 'Mike Johnson',
     timestamp: '5 hours ago',
     content: 'Beautiful day at the office! Check out this view from our new workspace.',
-    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
+    image: 'https://reformark.se/wp-content/uploads/2022/01/Mojang_JStrongPhoto_web_01.jpg',
     likes: 56,
     comments: 12
   },
@@ -39,8 +40,12 @@ function Post() {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
 
-      <main className="pt-8 pb-16 px-4">
-        <div className="max-w-[640px] mx-auto">
+      <main className="pt-8 pb-16 px-4 max-w-[1400px] mx-auto flex gap-6 items-start">
+        {/* Left sidebar - Contact (sticky) */}
+        <Contact />
+
+        {/* Middle column - Posts feed */}
+        <div className="flex-1 max-w-[640px] mx-auto">
           {/* Create Post Section */}
           <section className="bg-white rounded-[14px] p-5 shadow-[0_2px_12px_rgba(15,23,42,0.07)] mb-6">
             <div className="flex gap-3">
@@ -98,6 +103,9 @@ function Post() {
             ))}
           </section>
         </div>
+
+        {/* Right column - Empty placeholder */}
+        <div className="w-[240px] shrink-0 hidden xl:block" />
       </main>
 
       <Footer />

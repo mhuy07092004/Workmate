@@ -72,7 +72,7 @@ function Dashboard() {
       {/* Top navigation bar — shared across all authenticated pages */}
       <Navbar />
 
-      <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-6">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-6 items-start">
         {/* Left sidebar - Contact (sticky) */}
         <Contact />
 

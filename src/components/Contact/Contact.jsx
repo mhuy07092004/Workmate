@@ -17,8 +17,8 @@ const CONTACTS = [
 
 function Contact() {
   return (
-    <aside className="w-[240px] shrink-0">
-      <div className="sticky top-4 bg-white rounded-[14px] p-5 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+    <aside className="w-[240px] shrink-0 self-start">
+      <div className="sticky top-20 bg-white rounded-[14px] p-5 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
         <h3 className="text-[1rem] font-semibold text-slate-900 mb-4">Contacts</h3>
         
         <ul className="space-y-3">
