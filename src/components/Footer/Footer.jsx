@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 const SITE_MAP_LINKS = [
   { label: 'Homepage', to: '/' },
   { label: 'HR News', to: '/hr-news' },
-  { label: 'Contact us', to: '/contact' },
+  { label: 'Help Center', to: '/help' },
   { label: 'Portal', to: '/portal' },
 ]
 

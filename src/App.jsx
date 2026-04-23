@@ -11,7 +11,7 @@
  * Route map:
  *   /            → Dashboard page (main page)
  *   /login       → Login page (sign-in / sign-up)
- *   /contact     → Help/Support page (FAQ + Contact info)
+ *   /help        → Help/Support page (FAQ + Contact info)
  *   /hr-news, /portal, /privacy, /terms, /lawyers-corners
  *                → Placeholder (“coming soon”) until real pages exist
  *   *            → Redirect to / for any unknown path
@@ -35,7 +35,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
-        <Route path="/contact" element={<Help />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/recommended-candidates" element={<PlaceholderPage />} />
         <Route path="/recommended-jobs" element={<PlaceholderPage />} />
         <Route path="/portal" element={<PlaceholderPage />} />
