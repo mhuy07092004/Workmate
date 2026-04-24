@@ -29,6 +29,7 @@ const Post = lazy(() => import('./pages/post.jsx'))
 const Applications = lazy(() => import('./pages/applications.jsx'))
 const Help = lazy(() => import('./pages/help.jsx'))
 const News = lazy(() => import('./pages/news.jsx'))
+const JobDescription = lazy(() => import('./pages/job_description.jsx'))
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/post" element={<Post />} />
         <Route path="/applications" element={<Applications />} />
+        <Route path="/job/:id" element={<JobDescription />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
