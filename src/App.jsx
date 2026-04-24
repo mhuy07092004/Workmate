@@ -28,6 +28,7 @@ const Settings = lazy(() => import('./pages/settings.jsx'))
 const Post = lazy(() => import('./pages/post.jsx'))
 const Applications = lazy(() => import('./pages/applications.jsx'))
 const Help = lazy(() => import('./pages/help.jsx'))
+const News = lazy(() => import('./pages/news.jsx'))
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/help" element={<Help />} />
         <Route path="/recommended-candidates" element={<PlaceholderPage />} />
         <Route path="/recommended-jobs" element={<RecommendedJob />} />
+        <Route path="/news" element={<News />} />
         <Route path="/portal" element={<PlaceholderPage />} />
         <Route path="/privacy" element={<PlaceholderPage />} />
         <Route path="/terms" element={<PlaceholderPage />} />
