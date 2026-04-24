@@ -159,7 +159,7 @@ function Navbar() {
                 key={btn.path}
                 type="button"
                 onClick={() => navigate(btn.path)}
-                className="cursor-pointer rounded-full border-0 bg-transparent px-3 py-2 text-[0.9rem] font-medium text-slate-600 transition-colors hover:text-blue-700"
+                className="cursor-pointer rounded-full border-0 bg-transparent px-4 py-2 text-[1.05rem] font-semibold text-slate-800 transition-all hover:bg-blue-50 hover:text-blue-700"
               >
                 {btn.label}
               </button>
