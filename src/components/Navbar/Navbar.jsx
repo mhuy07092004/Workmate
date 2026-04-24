@@ -35,6 +35,7 @@ const CANDIDATE_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Jobs', path: '/recommended-jobs' },
+  { label: 'News', path: '/news' },
 ]
 
 /** Navigation buttons for employers */
