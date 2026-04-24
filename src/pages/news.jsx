@@ -30,7 +30,7 @@ function NewsSection({ title, icon, newsItems }) {
         {icon && <span className="text-2xl">{icon}</span>}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+      <div className="space-y-4 mb-6">
         {displayedNews.map((news) => (
           <NewsCard key={news.id} news={news} />
         ))}
