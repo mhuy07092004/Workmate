@@ -21,6 +21,17 @@ Complete guide for backend developers integrating with the Workmate frontend.
 9. [Storage Keys](#storage-keys)
 10. [Testing Integration](#testing-integration)
 
+### Page-by-Page Backend Requirements
+- [1. Login Page](#1-login-page-login)
+- [2. Dashboard Page](#2-dashboard-page-)
+- [3. Recommended Jobs Page](#3-recommended-jobs-page-recommended-jobs)
+- [4. Job Description Page](#4-job-description-page-jobid)
+- [5. Profile Page](#5-profile-page-profile)
+- [6. Applications Page](#6-applications-page-applications)
+- [7. Posts Feed Page](#7-posts-feed-page-post)
+- [8. Navbar Component](#8-navbar-component)
+- [9. Help Page](#9-help-page-help)
+
 ---
 
 ## Website Flow Overview
@@ -189,6 +200,7 @@ Current mock users in `src/data/user.json`:
 - Displays 3 job sections: "Chosen By Workmate A.I", "Based on Viewed Jobs", "Related Roles"
 - 15+ filter options (location, salary, job category, industry, etc.)
 - Mock data arrays with 12 jobs each
+- JobCards are clickable and navigate to `/job/:id`
 
 **Backend Requirements:**
 
@@ -196,6 +208,49 @@ Current mock users in `src/data/user.json`:
 |----------|--------|-------------|--------------|
 | `/api/jobs/recommendations` | GET | Get AI-recommended jobs | `?section=ai_chosen\|viewed\|related` |
 | `/api/jobs/search` | GET | Search/filter jobs | Multiple filter params |
+
+---
+
+### 4. Job Description Page (`/job/:id`)
+
+**Current Implementation:**
+- Displays detailed job information at `/job/:id` (dynamic route)
+- Components: `JobTitle`, `JobDetails`, `ApplyJob` button
+- Shows: job title, company, posted date (calendar format), location, type, salary
+- Sections: Requirements, What We Need From You, About Our Company, Benefits
+- Single mock data object (`MOCK_JOB_DATA`) for demonstration
+
+**Backend Requirements:**
+
+| Endpoint | Method | Description | Request | Response |
+|----------|--------|-------------|---------|----------|
+| `/api/jobs/:id` | GET | Get full job details | — | `Job` (with full description) |
+| `/api/jobs/:id/apply` | POST | Submit job application | `{ coverLetter?, resume? }` | `{ success: boolean, applicationId: number }` |
+
+**Enhanced Job Model (for job description page):**
+```typescript
+{
+  id: number,
+  title: string,
+  company: string,
+  type: "Full Time" | "Part Time" | "Contract" | "Casual" | "Hybrid" | "Remote",
+  location: string,
+  postedDate: string,       // ISO date format: "2025-04-20"
+  salaryRange: string,    // e.g., "$150k - $200k"
+  description: {
+    requirements: string,   // Long text with responsibilities
+    whatWeNeed: string,     // Qualifications and skills needed
+    aboutCompany: string,   // Company description
+    benefits?: string       // Optional benefits section
+  }
+}
+```
+
+**Frontend DEV NOTES:**
+- `JobTitle.jsx` — Displays title, company, calendar posted date
+- `JobDetails.jsx` — Renders long text sections with `whitespace-pre-line`
+- `ApplyJob.jsx` — Button component in `Button/` folder
+- Route added: `/job/:id` in `App.jsx`
 
 **Filter Parameters Supported:**
 - `location` - Sydney, Melbourne, Brisbane, Perth, Adelaide, Remote
@@ -216,7 +271,7 @@ Current mock users in `src/data/user.json`:
 
 ---
 
-### 4. Profile Page (`/profile`)
+### 5. Profile Page (`/profile`)
 
 **Current Implementation:**
 - Loads user data via `userService.findUserByEmail()` from `user.json`
@@ -264,7 +319,7 @@ Current mock users in `src/data/user.json`:
 
 ---
 
-### 5. Applications Page (`/applications`)
+### 6. Applications Page (`/applications`)
 
 **Current Implementation:**
 - Shows different content based on user role (via `getCurrentUserRole()`)
@@ -292,7 +347,7 @@ Current mock users in `src/data/user.json`:
 
 ---
 
-### 6. Posts Feed Page (`/post`)
+### 7. Posts Feed Page (`/post`)
 
 **Current Implementation:**
 - Displays sample posts from `SAMPLE_POSTS` array
@@ -308,7 +363,7 @@ Current mock users in `src/data/user.json`:
 
 ---
 
-### 7. Navbar Component
+### 8. Navbar Component
 
 **Current Implementation:**
 - Shows different nav buttons based on role
@@ -335,7 +390,7 @@ Current mock users in `src/data/user.json`:
 
 ---
 
-### 8. Help Page (`/help`)
+### 9. Help Page (`/help`)
 
 **Current Implementation:**
 - Static FAQ array (`FAQS`)
@@ -381,10 +436,16 @@ interface Job {
   companyId?: number;     // For employer reference
   type: string;
   location: string;
-  postedTime: string;
+  postedTime: string;       // Display format: "Posted 3 days ago"
+  postedDate?: string;      // ISO format: "2025-04-20" (for detail page)
   salaryRange?: string;
-  description?: string;
-  requirements?: string[];
+  description?: string | {  // String for cards, object for detail page
+    requirements: string;    // Long text - job responsibilities
+    whatWeNeed: string;     // Qualifications needed
+    aboutCompany: string;   // Company description
+    benefits?: string;      // Optional benefits
+  };
+  requirements?: string[];  // Legacy array format
   category?: string;
   industry?: string;
   employmentType?: string;
@@ -474,6 +535,7 @@ interface Notification {
 | `/api/jobs/saved` | GET | Yes | — | `{ jobs: Job[] }` |
 | `/api/jobs/saved/:id` | POST | Yes | — | `{ success: true }` |
 | `/api/jobs/saved/:id` | DELETE | Yes | — | `{ success: true }` |
+| `/api/jobs/:id/apply` | POST | Yes (candidate) | `{ coverLetter?, resume? }` | `{ success: boolean, applicationId: number }` |
 
 #### Applications
 
@@ -629,12 +691,17 @@ headers: {
 - [ ] Implement `GET /api/jobs` with filtering
 - [ ] Implement `GET /api/jobs/recommendations`
 - [ ] Implement `POST /api/jobs` (for employers)
+- [ ] Implement `GET /api/jobs/:id` (full job details)
+- [ ] Implement `POST /api/jobs/:id/apply` (job application)
 - [ ] Modify `src/pages/dashboard.jsx`:
   - [ ] Fetch jobs from API on mount
   - [ ] Fetch news from API
 - [ ] Modify `src/pages/recommended_job.jsx`:
   - [ ] Connect filters to API query params
   - [ ] Fetch real job data
+- [ ] Modify `src/pages/job_description.jsx`:
+  - [ ] Replace `MOCK_JOB_DATA` with API call to `/api/jobs/:id`
+  - [ ] Connect Apply button to `/api/jobs/:id/apply`
 
 ### Phase 4: Applications (Priority: Medium)
 
@@ -915,11 +982,16 @@ src/
 │   │   └── Navbar.jsx      # Notifications, search, user dropdown
 │   ├── Footer/             # Site footer
 │   ├── JobCard/            # Job listing display
+│   ├── JobDesription/      # Job detail page components
+│   │   ├── JobTitle.jsx    # Job title + company + posted date
+│   │   └── JobDetails.jsx  # Requirements, about, benefits sections
 │   ├── CandidateCard/      # Candidate display for employers
 │   ├── NewsCard/           # Hiring news card
 │   ├── PostCard/           # Social post card
 │   ├── Contact/            # Sticky sidebar contact list
 │   └── Button/             # Reusable button components
+│       ├── Profile_Button.jsx
+│       └── ApplyJob.jsx    # Apply for job button
 ├── services/              # API service layer
 │   └── userService.js      # MODIFY THIS FIRST
 ├── data/                   # Mock data (REMOVE WHEN BACKEND READY)
@@ -980,10 +1052,11 @@ console.log(localStorage.getItem('workmate_token'))
 
 ## Questions?
 
-Check these files for TODO comments marked `TODO (backend integration)`:
+Check these files for TODO comments marked `TODO (backend integration)` or `BACKEND DEV NOTE`:
 - `src/services/userService.js`
 - `src/pages/login.jsx`
 - `src/pages/profile.jsx`
+- `src/pages/job_description.jsx`
 - `src/components/Navbar/Navbar.jsx`
 
 For questions about specific page flows or component behavior, refer to the inline JSDoc comments in each file.

@@ -18,7 +18,7 @@ const CANDIDATE_DROPDOWN_ITEMS = [
   { label: 'Your Profile', key: 'profile', path: '/profile' },
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'My Applications', key: 'applications', path: '/applications' },
-  { label: 'My Networks', key: 'networks' },
+  { label: 'My Networks', key: 'networks', path: '/mynetwork' },
   { label: 'Post', key: 'post', path: '/post' },
 ]
 
