@@ -33,6 +33,7 @@ const News = lazy(() => import('./pages/news.jsx'))
 const JobDescription = lazy(() => import('./pages/job_description.jsx'))
 const MyNetwork = lazy(() => import('./pages/mynetwork.jsx'))
 const NewsInformation = lazy(() => import('./pages/news_information.jsx'))
+const PostJob = lazy(() => import('./pages/post_job.jsx'))
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
         <Route path="/post" element={<Post />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/mynetwork" element={<MyNetwork />} />
+        <Route path="/post-job" element={<PostJob />} />
         <Route path="/job/:id" element={<JobDescription />} />
         <Route path="/news/:id" element={<NewsInformation />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}

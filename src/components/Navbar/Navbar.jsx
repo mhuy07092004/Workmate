@@ -41,6 +41,7 @@ const CANDIDATE_NAV_BUTTONS = [
 /** Navigation buttons for employers */
 const EMPLOYER_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
+  { label: 'Post a Job', path: '/post-job' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
 ]
