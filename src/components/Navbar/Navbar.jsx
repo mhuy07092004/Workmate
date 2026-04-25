@@ -115,7 +115,7 @@ function Navbar() {
       {/* Brand logo */}
       <button
         type="button"
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigate('/')}
         className="flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 text-slate-900 no-underline"
       >
         <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue-700 text-base font-bold text-white">
