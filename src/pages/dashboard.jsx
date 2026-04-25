@@ -19,6 +19,8 @@ import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
 import NewsCard from '../components/NewsCard/NewsCard.jsx'
 import Contact from '../components/Contact/Contact.jsx'
+import Post from '../components/Posts/Post.jsx'
+import Showmore from '../components/Button/Showmore.jsx'
 
 // Mock job data
 const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
@@ -30,7 +32,43 @@ const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
   postedTime: 'Posted 3 weeks ago'
 }))
 
-// Mock news data
+// Mock posts data
+const MOCK_POSTS = [
+  {
+    id: 1,
+    author: 'Jane Smith',
+    timestamp: '2 hours ago',
+    content: 'Just finished an amazing project! Really proud of what our team accomplished this quarter. 🚀',
+    likes: 24,
+    comments: 5
+  },
+  {
+    id: 2,
+    author: 'Mike Johnson',
+    timestamp: '5 hours ago',
+    content: 'Beautiful day at the office! Check out this view from our new workspace.',
+    image: 'https://reformark.se/wp-content/uploads/2022/01/Mojang_JStrongPhoto_web_01.jpg',
+    likes: 56,
+    comments: 12
+  },
+  {
+    id: 3,
+    author: 'Sarah Chen',
+    timestamp: '1 day ago',
+    content: 'Hiring alert! Looking for talented software engineers to join our growing team. DM me if interested.',
+    likes: 38,
+    comments: 8
+  },
+  {
+    id: 4,
+    author: 'David Park',
+    timestamp: '2 days ago',
+    content: 'Excited to share that I just got promoted to Senior Developer! Hard work pays off. 🎉',
+    likes: 102,
+    comments: 23
+  }
+]
+
 const MOCK_NEWS = [
   {
     id: 1,
@@ -60,12 +98,24 @@ const MOCK_NEWS = [
 
 function Dashboard() {
   const [visibleJobs, setVisibleJobs] = useState(6)
+  const [visibleNews, setVisibleNews] = useState(4)
+  const [visiblePosts, setVisiblePosts] = useState(3)
 
-  const handleShowMore = () => {
+  const handleShowMoreJobs = () => {
     setVisibleJobs(prev => Math.min(prev + 6, MOCK_JOBS.length))
   }
 
+  const handleShowMoreNews = () => {
+    setVisibleNews(prev => Math.min(prev + 4, MOCK_NEWS.length))
+  }
+
+  const handleShowMorePosts = () => {
+    setVisiblePosts(prev => Math.min(prev + 3, MOCK_POSTS.length))
+  }
+
   const displayedJobs = MOCK_JOBS.slice(0, visibleJobs)
+  const displayedNews = MOCK_NEWS.slice(0, visibleNews)
+  const displayedPosts = MOCK_POSTS.slice(0, visiblePosts)
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -102,24 +152,13 @@ function Dashboard() {
           </div>
           
           {/* Show More/Show Less buttons */}
-          <div className="flex justify-center gap-3">
-            {visibleJobs < MOCK_JOBS.length && (
-              <button
-                onClick={handleShowMore}
-                className="cursor-pointer rounded-full border-0 bg-blue-700 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-blue-600 hover:shadow-[0_4px_14px_rgba(37,99,235,0.3)]"
-              >
-                Show More Jobs
-              </button>
-            )}
-            {visibleJobs > 6 && (
-              <button
-                onClick={() => setVisibleJobs(6)}
-                className="cursor-pointer rounded-full border-0 bg-slate-600 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-slate-700 hover:shadow-[0_4px_14px_rgba(71,85,105,0.3)]"
-              >
-                Show Less Jobs
-              </button>
-            )}
-          </div>
+          <Showmore
+            visibleCount={visibleJobs}
+            totalCount={MOCK_JOBS.length}
+            initialCount={6}
+            onShowMore={handleShowMoreJobs}
+            onShowLess={() => setVisibleJobs(6)}
+          />
         </section>
 
         {/* Hiring News Section */}
@@ -128,24 +167,46 @@ function Dashboard() {
             <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Hiring News</h2>
             <p className="text-slate-600">Stay updated with the latest hiring trends and company news</p>
           </div>
-          
+
           {/* News cards - single column layout */}
-          <div className="space-y-4">
-            {MOCK_NEWS.map(news => (
+          <div className="space-y-4 mb-6">
+            {displayedNews.map(news => (
               <NewsCard key={news.id} news={news} />
             ))}
           </div>
+
+          {/* Show More/Show Less buttons */}
+          <Showmore
+            visibleCount={visibleNews}
+            totalCount={MOCK_NEWS.length}
+            initialCount={4}
+            itemName="News"
+            onShowMore={handleShowMoreNews}
+            onShowLess={() => setVisibleNews(4)}
+          />
         </section>
 
         {/* Posts Section */}
-        <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-          <div className="mb-4">
+        <section>
+          <div className="mb-6">
             <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Posts</h2>
             <p className="text-slate-600">Connect with professionals and share insights</p>
           </div>
-          <div className="text-center py-8 text-slate-400">
-            <p>Posts content will be available soon</p>
+          <div className="space-y-4 mb-6">
+            {displayedPosts.map(post => (
+              <Post key={post.id} post={post} />
+            ))}
           </div>
+
+          {/* Show More/Show Less buttons */}
+          <Showmore
+            visibleCount={visiblePosts}
+            totalCount={MOCK_POSTS.length}
+            initialCount={3}
+            itemName="Posts"
+            onShowMore={handleShowMorePosts}
+            onShowLess={() => setVisiblePosts(3)}
+          />
         </section>
         </div>
 
