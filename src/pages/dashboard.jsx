@@ -74,25 +74,7 @@ const MOCK_NEWS = [
     id: 1,
     headline: 'ParkIT Just Hired 20 Fresher Software Engineers!',
     company: 'ParkIT',
-    postedTime: '2 days ago'
-  },
-  {
-    id: 1,
-    headline: 'Workmate Just Opens New Office in Wollongong with 50+ Positions',
-    company: 'Workmate',
-    postedTime: '3 days ago'
-  },
-  {
-    id: 3,
-    headline: 'SpaceX Raises $10M in Series A Funding',
-    company: 'SpaceX',
-    postedTime: '1 week ago'
-  },
-  {
-    id: 4,
-    headline: 'Amazon is looking for thoundsands of A.I Engineers',
-    company: 'Amazon',
-    postedTime: '1 week ago'
+    postedTime: '2 hours ago'
   }
 ]
 

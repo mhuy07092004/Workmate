@@ -31,6 +31,7 @@ const Help = lazy(() => import('./pages/help.jsx'))
 const News = lazy(() => import('./pages/news.jsx'))
 const JobDescription = lazy(() => import('./pages/job_description.jsx'))
 const MyNetwork = lazy(() => import('./pages/mynetwork.jsx'))
+const NewsInformation = lazy(() => import('./pages/news_information.jsx'))
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/mynetwork" element={<MyNetwork />} />
         <Route path="/job/:id" element={<JobDescription />} />
+        <Route path="/news/:id" element={<NewsInformation />} />
         {/* Catch-all: redirect unknown paths back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
