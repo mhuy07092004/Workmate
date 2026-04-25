@@ -10,7 +10,7 @@
  * Sign-out clears localStorage and redirects to /login.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { clearCurrentUser, getCurrentUserRole } from '../../services/userService.js'
 
 /** Dropdown items for candidates */
@@ -32,7 +32,7 @@ const EMPLOYER_DROPDOWN_ITEMS = [
 
 /** Navigation buttons for candidates */
 const CANDIDATE_NAV_BUTTONS = [
-  { label: 'Home', path: '/dashboard' },
+  { label: 'Home', path: '/' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Jobs', path: '/recommended-jobs' },
   { label: 'News', path: '/news' },
@@ -40,7 +40,7 @@ const CANDIDATE_NAV_BUTTONS = [
 
 /** Navigation buttons for employers */
 const EMPLOYER_NAV_BUTTONS = [
-  { label: 'Home', path: '/dashboard' },
+  { label: 'Home', path: '/' },
   { label: 'Post a Job', path: '/post-job' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
@@ -63,6 +63,7 @@ const dropdownSignOutClass =
 
 function Navbar() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [isSignedIn, setIsSignedIn] = useState(
     () => localStorage.getItem('workmate_signed_in') === 'true',
@@ -156,16 +157,23 @@ function Navbar() {
         {isSignedIn ? (
           <>
             {/* Role-based navigation buttons */}
-            {navButtons.map((btn) => (
-              <button
-                key={btn.path}
-                type="button"
-                onClick={() => navigate(btn.path)}
-                className="cursor-pointer rounded-full border-0 bg-transparent px-4 py-2 text-[1.05rem] font-semibold text-slate-800 transition-all hover:bg-blue-50 hover:text-blue-700"
-              >
-                {btn.label}
-              </button>
-            ))}
+            {navButtons.map((btn) => {
+              const isActive = location.pathname === btn.path
+              return (
+                <button
+                  key={btn.path}
+                  type="button"
+                  onClick={() => navigate(btn.path)}
+                  className={`cursor-pointer rounded-full border-0 px-4 py-2 text-[1.05rem] font-semibold transition-all ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-transparent text-slate-800 hover:bg-blue-50 hover:text-blue-700'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              )
+            })}
 
             {/* Notification bell */}
             <div className="relative" ref={notificationsRef}>

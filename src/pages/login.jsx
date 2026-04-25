@@ -234,24 +234,24 @@ function Login() {
           </div>
 
           <p className="mt-4 mb-2.5 text-slate-700 font-bold">I am a:</p>
-          <div className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative">
+          <div className="grid grid-cols-2 gap-3 relative">
             <div
-              className="absolute top-1 bottom-1 bg-blue-600 rounded-full shadow-[0_2px_12px_rgba(37,99,235,0.3)] transition-all duration-300 ease-out"
+              className="absolute top-0 bottom-0 border-[1.5px] border-blue-600 bg-blue-50 rounded-xl transition-all duration-300 ease-out"
               style={{
                 width: 'calc(50% - 6px)',
-                left: selectedRole === 'candidate' ? '4px' : 'calc(50% + 2px)',
+                left: selectedRole === 'candidate' ? '0' : 'calc(50% + 6px)',
               }}
             />
             <button
               type="button"
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-4 px-3 cursor-pointer transition-colors duration-300 ${selectedRole === 'candidate' ? 'text-white' : 'text-slate-700 hover:text-slate-900'}`}
+              className={`relative z-10 border-[1.5px] rounded-xl text-base font-bold py-4 px-3 cursor-pointer transition-all duration-300 ${selectedRole === 'candidate' ? 'border-blue-600 text-blue-700' : 'border-slate-300 text-slate-900 bg-white hover:border-blue-400'}`}
               onClick={() => handleRoleChange('candidate')}
             >
               Candidate
             </button>
             <button
               type="button"
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-4 px-3 cursor-pointer transition-colors duration-300 ${selectedRole === 'employer' ? 'text-white' : 'text-slate-700 hover:text-slate-900'}`}
+              className={`relative z-10 border-[1.5px] rounded-xl text-base font-bold py-4 px-3 cursor-pointer transition-all duration-300 ${selectedRole === 'employer' ? 'border-blue-600 text-blue-700' : 'border-slate-300 text-slate-900 bg-white hover:border-blue-400'}`}
               onClick={() => handleRoleChange('employer')}
             >
               Employer
