@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
-import PostCard from '../components/PostCard/PostCard.jsx'
+import Post from '../components/Posts/Post.jsx'
 import Contact from '../components/Contact/Contact.jsx'
 
 // Sample posts data - will be replaced by backend later
@@ -33,7 +33,7 @@ const SAMPLE_POSTS = [
   }
 ]
 
-function Post() {
+function PostsPage() {
   const [postText, setPostText] = useState('')
 
   return (
@@ -99,7 +99,7 @@ function Post() {
           {/* Posts Feed */}
           <section className="space-y-4">
             {SAMPLE_POSTS.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <Post key={post.id} post={post} />
             ))}
           </section>
         </div>
@@ -113,4 +113,4 @@ function Post() {
   )
 }
 
-export default Post
+export default PostsPage
