@@ -24,6 +24,7 @@ const Dashboard = lazy(() => import('./pages/dashboard.jsx'))
 const PlaceholderPage = lazy(() => import('./pages/placeholder.jsx'))
 const Profile = lazy(() => import('./pages/profile.jsx'))
 const RecommendedJob = lazy(() => import('./pages/recommended_job.jsx'))
+const RecommendedCandidate = lazy(() => import('./pages/recommended_candidate.jsx'))
 const Settings = lazy(() => import('./pages/settings.jsx'))
 const Post = lazy(() => import('./pages/post.jsx'))
 const Applications = lazy(() => import('./pages/applications.jsx'))
@@ -41,7 +42,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/recommended-candidates" element={<PlaceholderPage />} />
+        <Route path="/recommended-candidates" element={<RecommendedCandidate />} />
         <Route path="/recommended-jobs" element={<RecommendedJob />} />
         <Route path="/news" element={<News />} />
         <Route path="/portal" element={<PlaceholderPage />} />
