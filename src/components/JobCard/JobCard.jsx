@@ -4,9 +4,11 @@
  * Displays job information including company logo, job title, employment type,
  * location, and posting time. Uses consistent styling with the dashboard design.
  */
+import { Link } from 'react-router-dom'
 
 function JobCard({ job }) {
   return (
+    <Link to={`/job/${job.id}`} className="no-underline">
     <article className="bg-white rounded-[14px] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)] hover:shadow-[0_4px_20px_rgba(15,23,42,0.12)] transition-shadow cursor-pointer">
       {/* Company logo and job info */}
       <div className="flex items-start gap-4">
@@ -51,6 +53,7 @@ function JobCard({ job }) {
         </p>
       </div>
     </article>
+    </Link>
   )
 }
 

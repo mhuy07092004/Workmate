@@ -4,9 +4,11 @@
  * Displays hiring news including headline, company name, and posting time.
  * Uses consistent styling with the dashboard design system.
  */
+import { Link } from 'react-router-dom'
 
 function NewsCard({ news }) {
   return (
+    <Link to={`/news/${news.id}`} className="no-underline">
     <article className="bg-white rounded-[14px] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)] hover:shadow-[0_4px_20px_rgba(15,23,42,0.12)] transition-shadow cursor-pointer border-l-4 border-blue-500">
       {/* News headline */}
       <h3 className="mb-3 text-[1.1rem] font-semibold text-slate-900 leading-tight">
@@ -31,6 +33,7 @@ function NewsCard({ news }) {
         </span>
       </div>
     </article>
+    </Link>
   )
 }
 

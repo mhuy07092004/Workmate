@@ -105,7 +105,7 @@ function Help() {
 
         {/* Back to home link */}
         <div className="mt-8 text-center">
-          <Link to="/" className="text-blue-700 hover:underline">
+          <Link to="/dashboard" className="text-blue-700 hover:underline">
             Back to home
           </Link>
         </div>
