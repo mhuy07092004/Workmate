@@ -9,7 +9,8 @@
  * lazy chunk is being downloaded.
  *
  * Route map:
- *   /            → Dashboard page (main page)
+ *   /            → Landing page (cinematic hero — first thing visitors see)
+ *   /dashboard   → Dashboard page (main app home after sign-in)
  *   /login       → Login page (sign-in / sign-up)
  *   /help        → Help/Support page (FAQ + Contact info)
  *   /hr-news, /portal, /privacy, /terms, /lawyers-corners
@@ -19,6 +20,7 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+const Landing = lazy(() => import('./pages/landing.jsx'))
 const Login = lazy(() => import('./pages/login.jsx'))
 const Dashboard = lazy(() => import('./pages/dashboard.jsx'))
 const PlaceholderPage = lazy(() => import('./pages/placeholder.jsx'))
@@ -39,7 +41,8 @@ function App() {
   return (
     <Suspense fallback={<div className="page-loader">Loading...</div>}>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
         <Route path="/help" element={<Help />} />

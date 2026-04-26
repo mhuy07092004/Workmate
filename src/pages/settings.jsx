@@ -19,7 +19,7 @@ function Settings() {
         <section className="placeholder-card">
           <h1 className="placeholder-title">{pageTitle}</h1>
           <p className="placeholder-copy">This section is coming soon. We&apos;re building it for you.</p>
-          <Link to="/" className="placeholder-home-link">
+          <Link to="/dashboard" className="placeholder-home-link">
             Back to home
           </Link>
         </section>

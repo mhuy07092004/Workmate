@@ -32,7 +32,7 @@ const EMPLOYER_DROPDOWN_ITEMS = [
 
 /** Navigation buttons for candidates */
 const CANDIDATE_NAV_BUTTONS = [
-  { label: 'Home', path: '/' },
+  { label: 'Home', path: '/dashboard' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Jobs', path: '/recommended-jobs' },
   { label: 'News', path: '/news' },
@@ -40,7 +40,7 @@ const CANDIDATE_NAV_BUTTONS = [
 
 /** Navigation buttons for employers */
 const EMPLOYER_NAV_BUTTONS = [
-  { label: 'Home', path: '/' },
+  { label: 'Home', path: '/dashboard' },
   { label: 'Post a Job', path: '/post-job' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
@@ -115,7 +115,7 @@ function Navbar() {
       {/* Brand logo */}
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 text-slate-900 no-underline"
       >
         <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue-700 text-base font-bold text-white">

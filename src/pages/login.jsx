@@ -118,7 +118,7 @@ function Login() {
     localStorage.setItem('workmate_signed_in', 'true')
     setCurrentUserEmail(user.email)
     setCurrentUserRole(roleKey)
-    navigate('/', { replace: true })
+    navigate('/dashboard', { replace: true })
   }
 
   /**
