@@ -1,7 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
+import ProfilePictureCard from '../components/ProfilePictureCard/ProfilePictureCard.jsx'
 import { getCurrentUserEmail, findUserByEmail } from '../services/userService.js'
+
+const MAX_EXPERIENCE_ENTRIES = 10
+
+function newExperienceEntry() {
+  return {
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    position: '',
+    companyName: '',
+    fromDate: '',
+    untilDate: '',
+    isCurrentlyWorking: false,
+  }
+}
 
 function Profile() {
   const [formData, setFormData] = useState({
@@ -9,160 +23,159 @@ function Profile() {
     fullName: '',
     email: '',
     phoneNumber: '',
-    
+
     // Education
     educationLevel: '',
     major: '',
     school: '',
-    
-    // Experience
-    position: '',
-    fromDate: '',
-    untilDate: '',
-    isCurrentlyWorking: false,
-    companyName: '',
-    
+
     // About You
     aboutYou: '',
-    
+
     // Resume
-    resumeFile: null
+    resumeFile: null,
+
+    // Profile picture
+    profilePictureFile: null,
   })
 
+  const [experiences, setExperiences] = useState([newExperienceEntry()])
+  const [profilePicturePreviewUrl, setProfilePicturePreviewUrl] = useState(null)
   const [errors, setErrors] = useState({})
+  const [experienceErrors, setExperienceErrors] = useState([])
+  const [profilePictureError, setProfilePictureError] = useState('')
   const fileInputRef = useRef(null)
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
+  // Revoke preview URL on file change / unmount to avoid memory leaks
+  useEffect(() => {
+    let url = null
+    if (formData.profilePictureFile) {
+      url = URL.createObjectURL(formData.profilePictureFile)
+      setProfilePicturePreviewUrl(url)
+    } else {
+      setProfilePicturePreviewUrl(null)
     }
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [formData.profilePictureFile])
+
+  // ── Personal / Education / About handlers ──────────────────────────────────
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
   const handleAboutYouChange = (e) => {
     const text = e.target.value
-    const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length
-    
+    const wordCount = text.trim().split(/\s+/).filter(w => w.length > 0).length
     if (wordCount <= 400) {
-      setFormData(prev => ({
-        ...prev,
-        aboutYou: text
-      }))
-      
-      if (errors.aboutYou) {
-        setErrors(prev => ({
-          ...prev,
-          aboutYou: ''
-        }))
-      }
+      setFormData(prev => ({ ...prev, aboutYou: text }))
+      if (errors.aboutYou) setErrors(prev => ({ ...prev, aboutYou: '' }))
     }
   }
+
+  // ── Resume handlers ─────────────────────────────────────────────────────────
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (file && file.type === 'application/pdf') {
-      setFormData(prev => ({
-        ...prev,
-        resumeFile: file
-      }))
-      
-      if (errors.resumeFile) {
-        setErrors(prev => ({
-          ...prev,
-          resumeFile: ''
-        }))
-      }
+      setFormData(prev => ({ ...prev, resumeFile: file }))
+      if (errors.resumeFile) setErrors(prev => ({ ...prev, resumeFile: '' }))
     } else {
-      setErrors(prev => ({
-        ...prev,
-        resumeFile: 'Please upload a PDF file only'
-      }))
+      setErrors(prev => ({ ...prev, resumeFile: 'Please upload a PDF file only' }))
     }
   }
 
   const handleRemoveFile = () => {
-    setFormData(prev => ({
-      ...prev,
-      resumeFile: null
-    }))
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+    setFormData(prev => ({ ...prev, resumeFile: null }))
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // ── Profile picture handlers ─────────────────────────────────────────────────
+
+  const handleProfilePictureChange = (file, error) => {
+    setProfilePictureError(error || '')
+    setFormData(prev => ({ ...prev, profilePictureFile: file }))
+  }
+
+  const handleProfilePictureRemove = () => {
+    setProfilePictureError('')
+    setFormData(prev => ({ ...prev, profilePictureFile: null }))
+  }
+
+  // ── Experience handlers ──────────────────────────────────────────────────────
+
+  const updateExperience = (index, patch) => {
+    setExperiences(prev => prev.map((exp, i) => i === index ? { ...exp, ...patch } : exp))
+    if (experienceErrors[index]) {
+      setExperienceErrors(prev => {
+        const next = [...prev]
+        next[index] = { ...next[index], ...Object.fromEntries(Object.keys(patch).map(k => [k, ''])) }
+        return next
+      })
     }
   }
 
-  const handleCurrentlyWorkingChange = (e) => {
-    const isCurrentlyWorking = e.target.checked
-    setFormData(prev => ({
-      ...prev,
-      isCurrentlyWorking,
-      untilDate: isCurrentlyWorking ? '' : prev.untilDate
-    }))
+  const handleExperienceFieldChange = (index, e) => {
+    const { name, value, type, checked } = e.target
+    if (type === 'checkbox' && name === 'isCurrentlyWorking') {
+      updateExperience(index, { isCurrentlyWorking: checked, untilDate: checked ? '' : experiences[index].untilDate })
+    } else {
+      updateExperience(index, { [name]: value })
+    }
   }
+
+  const addExperience = () => {
+    if (experiences.length >= MAX_EXPERIENCE_ENTRIES) return
+    setExperiences(prev => [...prev, newExperienceEntry()])
+    setExperienceErrors(prev => [...prev, {}])
+  }
+
+  const removeExperience = (index) => {
+    if (experiences.length <= 1) return
+    setExperiences(prev => prev.filter((_, i) => i !== index))
+    setExperienceErrors(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // ── Validation ───────────────────────────────────────────────────────────────
 
   const validateForm = () => {
     const newErrors = {}
-    
-    // Personal Information validation
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required'
-    }
-    
+
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email'
     }
-    
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required'
-    }
-    
-    // Education validation
-    if (!formData.educationLevel) {
-      newErrors.educationLevel = 'Education level is required'
-    }
-    
-    if (!formData.major.trim()) {
-      newErrors.major = 'Major is required'
-    }
-    
-    if (!formData.school.trim()) {
-      newErrors.school = 'School is required'
-    }
-    
-    // Experience validation
-    if (!formData.position.trim()) {
-      newErrors.position = 'Position is required'
-    }
-    
-    if (!formData.fromDate) {
-      newErrors.fromDate = 'From date is required'
-    }
-    
-    if (!formData.isCurrentlyWorking && !formData.untilDate) {
-      newErrors.untilDate = 'Until date is required'
-    }
-    
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required'
-    }
-    
+
+    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required'
+
+    if (!formData.educationLevel) newErrors.educationLevel = 'Education level is required'
+    if (!formData.major.trim()) newErrors.major = 'Major is required'
+    if (!formData.school.trim()) newErrors.school = 'School is required'
+
+    // Per-entry experience validation
+    const newExpErrors = experiences.map((exp) => {
+      const e = {}
+      if (!exp.position.trim()) e.position = 'Position is required'
+      if (!exp.companyName.trim()) e.companyName = 'Company name is required'
+      if (!exp.fromDate) e.fromDate = 'From date is required'
+      if (!exp.isCurrentlyWorking && !exp.untilDate) e.untilDate = 'Until date is required'
+      return e
+    })
+
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setExperienceErrors(newExpErrors)
+
+    const expValid = newExpErrors.every(e => Object.keys(e).length === 0)
+    return Object.keys(newErrors).length === 0 && expValid
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    
     if (validateForm()) {
       // Profile save disabled - backend integration required
       alert('Profile save feature requires backend integration. Changes will not be persisted.')
@@ -170,11 +183,11 @@ function Profile() {
   }
 
   const handleCancel = () => {
-    // Reload user data to reset form
     loadUserData()
   }
 
-  // Load user data on mount
+  // ── Load user data ───────────────────────────────────────────────────────────
+
   const loadUserData = () => {
     const email = getCurrentUserEmail()
     if (email) {
@@ -187,14 +200,34 @@ function Profile() {
           educationLevel: user.educationLevel || '',
           major: user.major || '',
           school: user.school || '',
-          position: user.position || '',
-          fromDate: user.from || '',
-          untilDate: user.until === 'present' ? '' : user.until || '',
-          isCurrentlyWorking: user.until === 'present',
-          companyName: user.companyName || '',
           aboutYou: user.about || '',
-          resumeFile: null
+          resumeFile: null,
+          profilePictureFile: null,
         })
+
+        // Normalise experiences: prefer user.experiences[] if present, else fall back to flat fields
+        if (Array.isArray(user.experiences) && user.experiences.length > 0) {
+          setExperiences(user.experiences.map(exp => ({
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+            position: exp.position || '',
+            companyName: exp.companyName || '',
+            fromDate: exp.from || '',
+            untilDate: exp.until === 'present' ? '' : exp.until || '',
+            isCurrentlyWorking: exp.until === 'present',
+          })))
+        } else {
+          setExperiences([{
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+            position: user.position || '',
+            companyName: user.companyName || '',
+            fromDate: user.from || '',
+            untilDate: user.until === 'present' ? '' : user.until || '',
+            isCurrentlyWorking: user.until === 'present',
+          }])
+        }
+
+        setExperienceErrors([])
+        setProfilePictureError('')
       }
     }
   }
@@ -203,16 +236,20 @@ function Profile() {
     loadUserData()
   }, [])
 
-  const getWordCount = () => {
-    return formData.aboutYou.trim().split(/\s+/).filter(word => word.length > 0).length
-  }
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  const getWordCount = () =>
+    formData.aboutYou.trim().split(/\s+/).filter(w => w.length > 0).length
 
   const getCharCounterClass = () => {
-    const wordCount = getWordCount()
-    if (wordCount >= 400) return 'error'
-    if (wordCount >= 350) return 'warning'
+    const wc = getWordCount()
+    if (wc >= 400) return 'error'
+    if (wc >= 350) return 'warning'
     return ''
   }
+
+  const inputClass = (err) =>
+    `px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${err ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -224,6 +261,17 @@ function Profile() {
         </div>
 
         <form onSubmit={handleSubmit}>
+
+          {/* Profile Picture Section */}
+          <ProfilePictureCard
+            fullName={formData.fullName}
+            file={formData.profilePictureFile}
+            previewUrl={profilePicturePreviewUrl}
+            onFileChange={handleProfilePictureChange}
+            onRemove={handleProfilePictureRemove}
+            error={profilePictureError}
+          />
+
           {/* Personal Information Section */}
           <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-slate-200">
             <h2 className="text-xl font-semibold text-slate-800 mb-5 flex items-center gap-2">
@@ -240,7 +288,7 @@ function Profile() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.fullName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={inputClass(errors.fullName)}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && <span className="text-xs text-red-500 mt-1">{errors.fullName}</span>}
@@ -253,7 +301,7 @@ function Profile() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={inputClass(errors.email)}
                   placeholder="your.email@example.com"
                 />
                 {errors.email && <span className="text-xs text-red-500 mt-1">{errors.email}</span>}
@@ -266,7 +314,7 @@ function Profile() {
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.phoneNumber ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={inputClass(errors.phoneNumber)}
                   placeholder="+1 (555) 123-4567"
                 />
                 {errors.phoneNumber && <span className="text-xs text-red-500 mt-1">{errors.phoneNumber}</span>}
@@ -290,7 +338,7 @@ function Profile() {
                   name="educationLevel"
                   value={formData.educationLevel}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white ${errors.educationLevel ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={`${inputClass(errors.educationLevel)} bg-white`}
                 >
                   <option value="">Select education level</option>
                   <option value="high-school">High School</option>
@@ -310,7 +358,7 @@ function Profile() {
                   name="major"
                   value={formData.major}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.major ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={inputClass(errors.major)}
                   placeholder="e.g., Computer Science"
                 />
                 {errors.major && <span className="text-xs text-red-500 mt-1">{errors.major}</span>}
@@ -323,7 +371,7 @@ function Profile() {
                   name="school"
                   value={formData.school}
                   onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.school ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                  className={inputClass(errors.school)}
                   placeholder="e.g., University of California"
                 />
                 {errors.school && <span className="text-xs text-red-500 mt-1">{errors.school}</span>}
@@ -333,77 +381,127 @@ function Profile() {
 
           {/* Experience Section */}
           <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-slate-200">
-            <h2 className="text-xl font-semibold text-slate-800 mb-5 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Experience
-            </h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">Position</label>
-                <input
-                  type="text"
-                  name="position"
-                  value={formData.position}
-                  onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.position ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g., Software Engineer"
-                />
-                {errors.position && <span className="text-xs text-red-500 mt-1">{errors.position}</span>}
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">Company Name</label>
-                <input
-                  type="text"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.companyName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g., Tech Company Inc."
-                />
-                {errors.companyName && <span className="text-xs text-red-500 mt-1">{errors.companyName}</span>}
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">From</label>
-                <input
-                  type="date"
-                  name="fromDate"
-                  value={formData.fromDate}
-                  onChange={handleInputChange}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${errors.fromDate ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                />
-                {errors.fromDate && <span className="text-xs text-red-500 mt-1">{errors.fromDate}</span>}
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">Until</label>
-                <input
-                  type="date"
-                  name="untilDate"
-                  value={formData.untilDate}
-                  onChange={handleInputChange}
-                  disabled={formData.isCurrentlyWorking}
-                  className={`px-3 py-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${errors.untilDate ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                />
-                {errors.untilDate && <span className="text-xs text-red-500 mt-1">{errors.untilDate}</span>}
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="checkbox"
-                    id="currently-working"
-                    name="isCurrentlyWorking"
-                    checked={formData.isCurrentlyWorking}
-                    onChange={handleCurrentlyWorkingChange}
-                    className="w-4 h-4 accent-blue-500"
-                  />
-                  <label htmlFor="currently-working" className="text-sm text-gray-700 cursor-pointer">
-                    Currently working here
-                  </label>
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Experience
+              </h2>
+              <span className="text-xs text-slate-400">{experiences.length} / {MAX_EXPERIENCE_ENTRIES}</span>
             </div>
+
+            <div className="flex flex-col gap-6">
+              {experiences.map((exp, index) => {
+                const expErr = experienceErrors[index] || {}
+                return (
+                  <div key={exp.id} className="relative rounded-lg border border-slate-200 p-4 bg-slate-50">
+                    {/* Entry header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium text-slate-600">
+                        Experience {index + 1}
+                        {exp.position && ` — ${exp.position}`}
+                      </span>
+                      {experiences.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeExperience(index)}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">Position</label>
+                        <input
+                          type="text"
+                          name="position"
+                          value={exp.position}
+                          onChange={(e) => handleExperienceFieldChange(index, e)}
+                          className={inputClass(expErr.position)}
+                          placeholder="e.g., Software Engineer"
+                        />
+                        {expErr.position && <span className="text-xs text-red-500 mt-1">{expErr.position}</span>}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">Company Name</label>
+                        <input
+                          type="text"
+                          name="companyName"
+                          value={exp.companyName}
+                          onChange={(e) => handleExperienceFieldChange(index, e)}
+                          className={inputClass(expErr.companyName)}
+                          placeholder="e.g., Tech Company Inc."
+                        />
+                        {expErr.companyName && <span className="text-xs text-red-500 mt-1">{expErr.companyName}</span>}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">From</label>
+                        <input
+                          type="date"
+                          name="fromDate"
+                          value={exp.fromDate}
+                          onChange={(e) => handleExperienceFieldChange(index, e)}
+                          className={inputClass(expErr.fromDate)}
+                        />
+                        {expErr.fromDate && <span className="text-xs text-red-500 mt-1">{expErr.fromDate}</span>}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className={`text-sm font-medium mb-1.5 after:content-['_*'] after:text-red-500 ${exp.isCurrentlyWorking ? 'text-gray-400' : 'text-gray-700'}`}>Until</label>
+                        <input
+                          type="date"
+                          name="untilDate"
+                          value={exp.untilDate}
+                          onChange={(e) => handleExperienceFieldChange(index, e)}
+                          disabled={exp.isCurrentlyWorking}
+                          className={`${inputClass(expErr.untilDate)} disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                        />
+                        {expErr.untilDate && <span className="text-xs text-red-500 mt-1">{expErr.untilDate}</span>}
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="checkbox"
+                            id={`currently-working-${exp.id}`}
+                            name="isCurrentlyWorking"
+                            checked={exp.isCurrentlyWorking}
+                            onChange={(e) => handleExperienceFieldChange(index, e)}
+                            className="w-4 h-4 accent-blue-500"
+                          />
+                          <label htmlFor={`currently-working-${exp.id}`} className="text-sm text-gray-700 cursor-pointer">
+                            Currently working here
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Add experience button */}
+            {experiences.length < MAX_EXPERIENCE_ENTRIES && (
+              <button
+                type="button"
+                onClick={addExperience}
+                className="mt-5 flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-md transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add another experience
+              </button>
+            )}
+            {experiences.length >= MAX_EXPERIENCE_ENTRIES && (
+              <p className="mt-4 text-xs text-slate-400">Maximum of {MAX_EXPERIENCE_ENTRIES} experience entries reached.</p>
+            )}
           </div>
 
           {/* About You Section */}
@@ -439,14 +537,11 @@ function Profile() {
               </svg>
               Add Your Resume
             </h2>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => fileInputRef.current?.click()}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+            <div
+              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
               <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
@@ -470,7 +565,7 @@ function Profile() {
               </div>
             )}
 
-            {errors.resumeFile && <span className="text-xs text-red-500 mt-1">{errors.resumeFile}</span>}
+            {errors.resumeFile && <span className="text-xs text-red-500 mt-1 block">{errors.resumeFile}</span>}
           </div>
 
           {/* Form Actions */}
