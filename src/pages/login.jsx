@@ -233,7 +233,7 @@ function Login() {
             </button>
           </div>
 
-          <p className="mt-4 mb-2.5 text-slate-700 font-bold">I am a:</p>
+          <p className="mt-4 mb-2.5 text-slate-700 font-bold"></p>
           <div
             className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative"
             role="radiogroup"
