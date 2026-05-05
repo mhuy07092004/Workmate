@@ -27,7 +27,7 @@ const CONTENT = {
       'Our Group Members:',
       'Minh Huy Loi (Frontend Developer) ',
       'The Long Tran (Backend Developer) ',
-      'Hoang Thanh Truc Nguyen (UI/UX Designer) ',
+      'Hoang Thanh Truc Nguyen (Project Manager) ',
       'Thi Tuong Vy Tran (UI/UX Designer) ',
     ],
   },
