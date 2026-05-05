@@ -124,7 +124,7 @@ export default function LandingPage() {
               True Worth{' '}
             </h1>
             <p
-              className="animate-fade-rise-delay text-base sm:text-lg max-w-2xl mt-8 leading-relaxed"
+              className="animate-fade-rise-delay text-base sm:text-lg max-w-2xl mx-auto mt-8 leading-relaxed"
               style={{ color: MUTED_COLOR }}
             >
               In a crowded market, we don’t just match resumes to roles.
