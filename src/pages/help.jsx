@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
@@ -27,12 +26,6 @@ const FAQS = [
 ]
 
 function Help() {
-  const [openIndex, setOpenIndex] = useState(null)
-
-  const toggleFaq = (index) => {
-    setOpenIndex(openIndex === index ? null : index)
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <Navbar />
@@ -48,25 +41,9 @@ function Help() {
           <h2 className="mb-6 text-xl font-bold text-slate-900">Frequently Asked Questions</h2>
           <div className="space-y-3">
             {FAQS.map((faq, index) => (
-              <div key={index} className="border-b border-slate-200 last:border-b-0">
-                <button
-                  type="button"
-                  onClick={() => toggleFaq(index)}
-                  className="flex w-full items-center justify-between py-4 text-left font-medium text-slate-800 hover:text-blue-700"
-                >
-                  {faq.question}
-                  <svg
-                    className={`h-5 w-5 transition-transform ${openIndex === index ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {openIndex === index && (
-                  <p className="pb-4 text-slate-600">{faq.answer}</p>
-                )}
+              <div key={index} className="border-b border-slate-200 pb-4 last:border-b-0 last:pb-0">
+                <h3 className="py-2 font-medium text-slate-800">{faq.question}</h3>
+                <p className="text-slate-600">{faq.answer}</p>
               </div>
             ))}
           </div>
