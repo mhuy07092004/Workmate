@@ -4,6 +4,11 @@
  * Provides advanced filtering options for finding candidates:
  * - Text inputs: Candidate Name, Location, Major/Field of Study
  * - Dropdowns: Experience Level, Degree Type, Certification, Language, etc.
+ *
+ * Props:
+ *   variant        — 'page' (default card) | 'popover' (compact, no card shell)
+ *   suppressFields — array of filter keys to hide (e.g. ['candidateName'] when
+ *                    navbar input already captures the candidate name query)
  */
 
 const FILTER_OPTIONS = {
@@ -19,22 +24,175 @@ const FILTER_OPTIONS = {
   sortBy: ['Most Relevant', 'Most Recent', 'Experience (High to Low)', 'Experience (Low to High)'],
 }
 
-function CandidateFilter({ filters, onFilterChange, onClearFilters, showFilters, setShowFilters }) {
-  const handleFilterChange = (key, value) => {
-    onFilterChange(key, value)
-  }
+const fieldClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20'
+const labelClass = 'block text-[0.875rem] font-medium text-slate-700 mb-1.5'
 
-  return (
-    <section className="bg-white rounded-[14px] px-6 py-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[1.2rem] font-semibold text-slate-900">Advanced Filters</h2>
+function CandidateFilter({
+  filters,
+  onFilterChange,
+  onClearFilters,
+  showFilters,
+  setShowFilters,
+  variant = 'page',
+  suppressFields = [],
+}) {
+  const isPopover = variant === 'popover'
+  const hide = (field) => suppressFields.includes(field)
+
+  const quickGridClass = isPopover
+    ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3'
+    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4'
+
+  const expandedGridClass = isPopover
+    ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200'
+    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-200'
+
+  const actionsClass = isPopover
+    ? 'flex gap-3 mt-3 pt-3 border-t border-slate-200'
+    : 'flex gap-3 mt-4 pt-4 border-t border-slate-200'
+
+  const expandedFilterFields = (
+    <>
+      {!hide('major') && (
+        <div>
+          <label className={labelClass}>Major / Field of Study</label>
+          <input
+            type="text"
+            value={filters.major}
+            onChange={(e) => onFilterChange('major', e.target.value)}
+            placeholder="Enter major or field..."
+            className={fieldClass}
+          />
+        </div>
+      )}
+
+      {!hide('certification') && (
+        <div>
+          <label className={labelClass}>Certification</label>
+          <select
+            value={filters.certification}
+            onChange={(e) => onFilterChange('certification', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Certification</option>
+            {FILTER_OPTIONS.certification.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('language') && (
+        <div>
+          <label className={labelClass}>Language</label>
+          <select
+            value={filters.language}
+            onChange={(e) => onFilterChange('language', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Language</option>
+            {FILTER_OPTIONS.language.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('workArrangement') && (
+        <div>
+          <label className={labelClass}>Work Arrangement</label>
+          <select
+            value={filters.workArrangement}
+            onChange={(e) => onFilterChange('workArrangement', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Arrangement</option>
+            {FILTER_OPTIONS.workArrangement.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('industry') && (
+        <div>
+          <label className={labelClass}>Industry Experience</label>
+          <select
+            value={filters.industry}
+            onChange={(e) => onFilterChange('industry', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Industry</option>
+            {FILTER_OPTIONS.industry.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('roleLevel') && (
+        <div>
+          <label className={labelClass}>Role Level</label>
+          <select
+            value={filters.roleLevel}
+            onChange={(e) => onFilterChange('roleLevel', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Level</option>
+            {FILTER_OPTIONS.roleLevel.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('availability') && (
+        <div>
+          <label className={labelClass}>Availability</label>
+          <select
+            value={filters.availability}
+            onChange={(e) => onFilterChange('availability', e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Any Time</option>
+            {FILTER_OPTIONS.availability.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!hide('sortBy') && (
+        <div>
+          <label className={labelClass}>Sort By</label>
+          <select
+            value={filters.sortBy}
+            onChange={(e) => onFilterChange('sortBy', e.target.value)}
+            className={fieldClass}
+          >
+            {FILTER_OPTIONS.sortBy.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </>
+  )
+
+  const body = (
+    <>
+      {/* Header */}
+      <div className={`flex items-center justify-between ${isPopover ? 'mb-3' : 'mb-4'}`}>
+        <h2 className={`font-semibold text-slate-900 ${isPopover ? 'text-[0.95rem]' : 'text-[1.2rem]'}`}>
+          {isPopover ? 'Filters' : 'Advanced Filters'}
+        </h2>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 text-blue-700 font-medium hover:text-blue-800 transition-colors"
+          className="flex items-center gap-1.5 text-blue-700 font-medium hover:text-blue-800 transition-colors"
         >
-          <span>{showFilters ? 'Hide Filters' : 'Show All Filters'}</span>
+          <span className="text-[0.875rem]">{showFilters ? 'Hide' : 'More Filters'}</span>
           <svg
-            className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+            className={`transition-transform ${isPopover ? 'w-4 h-4' : 'w-5 h-5'} ${showFilters ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -44,174 +202,90 @@ function CandidateFilter({ filters, onFilterChange, onClearFilters, showFilters,
         </button>
       </div>
 
-      {/* Always visible: Quick filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Candidate Name</label>
-          <input
-            type="text"
-            value={filters.candidateName}
-            onChange={(e) => handleFilterChange('candidateName', e.target.value)}
-            placeholder="Enter candidate name..."
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Location</label>
-          <input
-            type="text"
-            value={filters.location}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
-            placeholder="Enter location..."
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Experience Level</label>
-          <select
-            value={filters.experienceLevel}
-            onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-          >
-            <option value="">Any Experience</option>
-            {FILTER_OPTIONS.experienceLevel.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Degree Type</label>
-          <select
-            value={filters.degreeType}
-            onChange={(e) => handleFilterChange('degreeType', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-          >
-            <option value="">Any Degree</option>
-            {FILTER_OPTIONS.degreeType.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Expanded filters */}
-      {showFilters && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-200">
+      {/* Quick filters */}
+      <div className={quickGridClass}>
+        {!hide('candidateName') && (
           <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Major / Field of Study</label>
+            <label className={labelClass}>Candidate Name</label>
             <input
               type="text"
-              value={filters.major}
-              onChange={(e) => handleFilterChange('major', e.target.value)}
-              placeholder="Enter major or field..."
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+              value={filters.candidateName}
+              onChange={(e) => onFilterChange('candidateName', e.target.value)}
+              placeholder="Enter candidate name..."
+              className={fieldClass}
             />
           </div>
+        )}
 
+        {!hide('location') && (
           <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Certification</label>
+            <label className={labelClass}>Location</label>
+            <input
+              type="text"
+              value={filters.location}
+              onChange={(e) => onFilterChange('location', e.target.value)}
+              placeholder="Enter location..."
+              className={fieldClass}
+            />
+          </div>
+        )}
+
+        {!hide('experienceLevel') && (
+          <div>
+            <label className={labelClass}>Experience Level</label>
             <select
-              value={filters.certification}
-              onChange={(e) => handleFilterChange('certification', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+              value={filters.experienceLevel}
+              onChange={(e) => onFilterChange('experienceLevel', e.target.value)}
+              className={fieldClass}
             >
-              <option value="">Any Certification</option>
-              {FILTER_OPTIONS.certification.map(opt => (
+              <option value="">Any Experience</option>
+              {FILTER_OPTIONS.experienceLevel.map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
           </div>
+        )}
 
+        {!hide('degreeType') && (
           <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Language</label>
+            <label className={labelClass}>Degree Type</label>
             <select
-              value={filters.language}
-              onChange={(e) => handleFilterChange('language', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+              value={filters.degreeType}
+              onChange={(e) => onFilterChange('degreeType', e.target.value)}
+              className={fieldClass}
             >
-              <option value="">Any Language</option>
-              {FILTER_OPTIONS.language.map(opt => (
+              <option value="">Any Degree</option>
+              {FILTER_OPTIONS.degreeType.map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
           </div>
+        )}
+      </div>
 
-          <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Work Arrangement</label>
-            <select
-              value={filters.workArrangement}
-              onChange={(e) => handleFilterChange('workArrangement', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-            >
-              <option value="">Any Arrangement</option>
-              {FILTER_OPTIONS.workArrangement.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Industry Experience</label>
-            <select
-              value={filters.industry}
-              onChange={(e) => handleFilterChange('industry', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-            >
-              <option value="">Any Industry</option>
-              {FILTER_OPTIONS.industry.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Role Level</label>
-            <select
-              value={filters.roleLevel}
-              onChange={(e) => handleFilterChange('roleLevel', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-            >
-              <option value="">Any Level</option>
-              {FILTER_OPTIONS.roleLevel.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Availability</label>
-            <select
-              value={filters.availability}
-              onChange={(e) => handleFilterChange('availability', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-            >
-              <option value="">Any Time</option>
-              {FILTER_OPTIONS.availability.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[0.875rem] font-medium text-slate-700 mb-1.5">Sort By</label>
-            <select
-              value={filters.sortBy}
-              onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[0.9rem] text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-            >
-              {FILTER_OPTIONS.sortBy.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+      {/* Expanded filters — popover (navbar): animated height; page: mount only when open */}
+      {isPopover ? (
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+            showFilters ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className={expandedGridClass} inert={!showFilters ? true : undefined}>
+              {expandedFilterFields}
+            </div>
           </div>
         </div>
+      ) : (
+        showFilters && (
+          <div className={expandedGridClass}>
+            {expandedFilterFields}
+          </div>
+        )
       )}
 
       {/* Filter actions */}
-      <div className="flex gap-3 mt-4 pt-4 border-t border-slate-200">
+      <div className={actionsClass}>
         <button
           onClick={onClearFilters}
           className="cursor-pointer rounded-full border border-slate-300 bg-white px-[22px] py-[9px] text-[0.92rem] font-semibold text-slate-700 transition-colors hover:bg-slate-100"
@@ -224,6 +298,16 @@ function CandidateFilter({ filters, onFilterChange, onClearFilters, showFilters,
           Apply Filters
         </button>
       </div>
+    </>
+  )
+
+  if (isPopover) {
+    return <div className="px-4 py-4">{body}</div>
+  }
+
+  return (
+    <section className="bg-white rounded-[14px] px-6 py-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+      {body}
     </section>
   )
 }

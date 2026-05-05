@@ -3,15 +3,33 @@
  *
  * Three zones:
  *   Left  — Workmate brand logo
- *   Center — "Search Job" search bar
+ *   Center — Search bar (expands on focus, shows advanced filter popover)
  *   Right  — Notification bell + user dropdown (signed in) OR "Join Now" button (signed out)
  *
  * Auth state is read from localStorage ('workmate_signed_in').
  * Sign-out clears localStorage and redirects to /login.
+ *
+ * Search bar behaviour:
+ *   - Collapsed: standard rounded pill input.
+ *   - Expanded (on focus): bar widens and an advanced filter panel drops below.
+ *   - Collapse on: Escape key, or click outside the search + panel area.
+ *   - Filter state is local (UI only). The typed query is bound to
+ *     filters.jobTitle (candidate) or filters.candidateName (employer) so
+ *     those fields are suppressed inside the popover to avoid duplication.
+ *
+ * BACKEND DEV NOTE: Wire search here when ready.
+ *   - Candidate search: POST /api/jobs/search  { q: filters.jobTitle, ...filters }
+ *   - Employer search:  POST /api/candidates/search { q: filters.candidateName, ...filters }
+ *   - Apply button in JobFilter / CandidateFilter should trigger the fetch and
+ *     navigate to a /search-results page (or update the dashboard in-place).
+ *   - State shape already matches what the recommended pages use; no refactor needed.
+ *   - grep "BACKEND DEV" to find all handoff points.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { clearCurrentUser, getCurrentUserRole } from '../../services/userService.js'
+import JobFilter from '../FilterSection/JobFilter.jsx'
+import CandidateFilter from '../FilterSection/CandidateFilter.jsx'
 
 /** Dropdown items for candidates */
 const CANDIDATE_DROPDOWN_ITEMS = [
@@ -55,6 +73,39 @@ const MOCK_NOTIFICATIONS = [
   { id: 4, text: 'Your Post Reached 1000 candidates', time: '4d ago', unread: false },
 ]
 
+const INITIAL_JOB_FILTERS = {
+  location: '',
+  salaryRange: '',
+  jobCategory: '',
+  industry: '',
+  jobTitle: '',
+  employmentType: '',
+  companyName: '',
+  workArrangement: '',
+  certification: '',
+  language: '',
+  degree: '',
+  dayPosted: '',
+  experience: '',
+  roleLevel: '',
+  sortBy: 'Most Recent',
+}
+
+const INITIAL_CANDIDATE_FILTERS = {
+  candidateName: '',
+  location: '',
+  experienceLevel: '',
+  degreeType: '',
+  major: '',
+  certification: '',
+  language: '',
+  workArrangement: '',
+  industry: '',
+  roleLevel: '',
+  availability: '',
+  sortBy: 'Most Relevant',
+}
+
 const dropdownItemClass =
   'block w-full cursor-pointer rounded-lg border-0 bg-transparent px-3.5 py-2.5 text-left text-[0.92rem] font-medium text-slate-800 transition-colors hover:bg-slate-100'
 
@@ -71,24 +122,36 @@ function Navbar() {
   const [userRole, setUserRole] = useState(() => getCurrentUserRole())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  // Search bar expand state
+  const [searchExpanded, setSearchExpanded] = useState(false)
+  const [showSearchFilters, setShowSearchFilters] = useState(false)
+  const [jobFilters, setJobFilters] = useState(INITIAL_JOB_FILTERS)
+  const [candidateFilters, setCandidateFilters] = useState(INITIAL_CANDIDATE_FILTERS)
+
   const dropdownRef = useRef(null)
   const notificationsRef = useRef(null)
+  const searchRef = useRef(null)
 
-  const searchPlaceholder = userRole === 'employer' ? 'Search Candidates' : 'Search Jobs'
+  const isEmployer = userRole === 'employer'
+  const searchPlaceholder = isEmployer ? 'Search Candidates' : 'Search Jobs'
+  const searchAriaLabel = isEmployer ? 'Search candidates' : 'Search jobs'
+
+  const searchInputValue = isEmployer ? candidateFilters.candidateName : jobFilters.jobTitle
 
   const dropdownItems = useMemo(() => {
-    return userRole === 'employer' ? EMPLOYER_DROPDOWN_ITEMS : CANDIDATE_DROPDOWN_ITEMS
-  }, [userRole])
+    return isEmployer ? EMPLOYER_DROPDOWN_ITEMS : CANDIDATE_DROPDOWN_ITEMS
+  }, [isEmployer])
 
   const navButtons = useMemo(() => {
-    return userRole === 'employer' ? EMPLOYER_NAV_BUTTONS : CANDIDATE_NAV_BUTTONS
-  }, [userRole])
+    return isEmployer ? EMPLOYER_NAV_BUTTONS : CANDIDATE_NAV_BUTTONS
+  }, [isEmployer])
 
   const unreadCount = useMemo(() => {
     return MOCK_NOTIFICATIONS.filter(n => n.unread).length
   }, [])
 
-  /** Close dropdowns when clicking outside */
+  /** Close dropdowns and search panel when clicking outside */
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -97,10 +160,51 @@ function Navbar() {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setNotificationsOpen(false)
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchExpanded(false)
+        setShowSearchFilters(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  /** Collapse search on Escape key */
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape' && searchExpanded) {
+        setSearchExpanded(false)
+        setShowSearchFilters(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [searchExpanded])
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value
+    if (isEmployer) {
+      setCandidateFilters(prev => ({ ...prev, candidateName: value }))
+    } else {
+      setJobFilters(prev => ({ ...prev, jobTitle: value }))
+    }
+  }
+
+  const handleJobFilterChange = (key, value) => {
+    setJobFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearJobFilters = () => {
+    setJobFilters(INITIAL_JOB_FILTERS)
+  }
+
+  const handleCandidateFilterChange = (key, value) => {
+    setCandidateFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleClearCandidateFilters = () => {
+    setCandidateFilters(INITIAL_CANDIDATE_FILTERS)
+  }
 
   const handleSignOut = () => {
     localStorage.removeItem('workmate_signed_in')
@@ -124,32 +228,87 @@ function Navbar() {
         <span className="text-[1.15rem] font-bold text-slate-900">Workmate</span>
       </button>
 
-      {/* Center: search bar */}
-      <div className="relative mx-auto flex max-w-[480px] flex-1 items-center">
-        <span
-          className="pointer-events-none absolute left-3.5 flex items-center text-slate-400"
-          aria-hidden="true"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* Center: expandable search bar */}
+      <div
+        ref={searchRef}
+        className={`relative mx-auto flex-1 transition-[max-width] duration-300 ease-in-out ${
+          searchExpanded ? 'max-w-[680px]' : 'max-w-[480px]'
+        }`}
+      >
+        {/* Search input */}
+        <div className="relative flex items-center">
+          <span
+            className="pointer-events-none absolute left-3.5 flex items-center text-slate-400"
+            aria-hidden="true"
           >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </span>
-        <input
-          className="w-full rounded-full border-[1.5px] border-slate-200 bg-slate-50 py-[9px] pr-4 pl-10 text-[0.95rem] text-slate-900 outline-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
-          type="search"
-          placeholder={searchPlaceholder}
-          aria-label="Search jobs"
-        />
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            className="w-full rounded-full border-[1.5px] border-slate-200 bg-slate-50 py-[9px] pr-4 pl-10 text-[0.95rem] text-slate-900 outline-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
+            type="search"
+            placeholder={searchPlaceholder}
+            aria-label={searchAriaLabel}
+            aria-expanded={searchExpanded}
+            value={searchInputValue}
+            onChange={handleSearchInput}
+            onFocus={() => setSearchExpanded(true)}
+          />
+          {searchExpanded && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchExpanded(false)
+                setShowSearchFilters(false)
+              }}
+              className="absolute right-3 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label="Close search"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Advanced filter popover */}
+        {searchExpanded && (
+          <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-[200] rounded-xl border border-gray-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.12)] max-h-[70vh] overflow-y-auto">
+            {isEmployer ? (
+              <CandidateFilter
+                variant="popover"
+                filters={candidateFilters}
+                onFilterChange={handleCandidateFilterChange}
+                onClearFilters={handleClearCandidateFilters}
+                showFilters={showSearchFilters}
+                setShowFilters={setShowSearchFilters}
+                suppressFields={['candidateName']}
+              />
+            ) : (
+              <JobFilter
+                variant="popover"
+                filters={jobFilters}
+                onFilterChange={handleJobFilterChange}
+                onClearFilters={handleClearJobFilters}
+                showFilters={showSearchFilters}
+                setShowFilters={setShowSearchFilters}
+                suppressFields={['jobTitle']}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: conditional auth actions */}
