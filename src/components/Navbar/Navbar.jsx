@@ -46,6 +46,8 @@ const EMPLOYER_DROPDOWN_ITEMS = [
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'Applicants', key: 'applications', path: '/applications' },
   { label: 'Post', key: 'post', path: '/post' },
+  { label: 'Help', path: '/help' },
+
 ]
 
 /** Navigation buttons for candidates */
@@ -60,7 +62,7 @@ const CANDIDATE_NAV_BUTTONS = [
 const EMPLOYER_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
   { label: 'Post a Job', path: '/post-job' },
-  { label: 'Help', path: '/help' },
+  { label: 'News', path: '/news' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
 ]
 

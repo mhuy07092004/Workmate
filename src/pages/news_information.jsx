@@ -7,7 +7,7 @@
  *   - Featured image and detailed news content
  *   - Uses route param :id for dynamic routing
  */
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import NewsTitle from '../components/NewsDescription/NewsTitle.jsx'
@@ -36,6 +36,7 @@ This hiring announcement signals strong growth in Australia's tech sector and re
 
 function NewsInformation() {
   const { id } = useParams()
+  const navigate = useNavigate()
 
   // In a real app, fetch news data based on id
   // For now, using mock data
@@ -46,6 +47,17 @@ function NewsInformation() {
       <Navbar />
 
       <main className="flex-1 max-w-[900px] w-full mx-auto px-6 py-8">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 mb-6 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+
         {/* News Title Section */}
         <NewsTitle
           title={news.title}
