@@ -121,8 +121,13 @@ Current mock users in `src/data/user.json`:
 ### 1. Login Page (`/login`)
 
 **Current Implementation:**
-- Validates credentials against hardcoded `SIGN_IN_USERS` object from `user.json`
-- Stores `workmate_signed_in`, `workmate_current_user_email`, and `workmate_user_role` in localStorage
+- Validates credentials against `MOCK_USERS` array loaded from `user.json`
+- Role is **inferred** from the matched user record via `normalizeRole()` — the sign-in form has no role selector
+- Role selector appears only on the sign-up tab to set the account type for new registrations
+- Sign-in form includes a show/hide password toggle and a "Remember me" checkbox (UI only — persistence not yet implemented)
+- Two-column layout: left branding panel with animated floating bubbles, right panel with sign-in / sign-up tab switcher
+- On success, redirects to `/dashboard`
+- Stores `workmate_signed_in`, `workmate_current_user_email`, and `workmate_user_role` in localStorage via `userService.js`
 
 **Backend Requirements:**
 
@@ -134,9 +139,10 @@ Current mock users in `src/data/user.json`:
 **Fields for Registration:**
 - `email` (string, required) - Primary login identifier
 - `password` (string, required) - Will be hashed on backend
-- `role` (enum: "candidate" | "employer", required)
-- `fullName` (string, required) - Candidate's full name or employer's name
-- `companyName` (string, optional) - Required only for employer role
+- `role` (enum: "candidate" | "employer", required) - Selected via role toggle on the sign-up tab
+- `nameOrCompany` (string, required) - Label reads "Full Name" for candidates, "Company Name" for employers
+
+> **Note:** The frontend sign-up form uses a single `nameOrCompany` field whose label changes based on the selected role. Map this to `fullName` for candidates or `companyName` for employers on the backend.
 
 ---
 
@@ -591,7 +597,7 @@ User enters credentials
         ▼
 ┌─────────────────────┐
 │ login.jsx checks    │
-│ SIGN_IN_USERS object│
+│ MOCK_USERS array    │
 │ (from user.json)    │
 └─────────────────────┘
         │
@@ -669,9 +675,10 @@ headers: {
   - [ ] Add `clearToken()` function
   - [ ] Convert `getCurrentUser()` to async with fetch
 - [ ] Modify `src/pages/login.jsx`:
-  - [ ] Replace `SIGN_IN_USERS` check with API call
+  - [ ] Replace `MOCK_USERS` check with `POST /api/auth/login` call
   - [ ] Store JWT token on successful login
   - [ ] Handle API errors
+  - [ ] Implement "Remember me" persistence logic (checkbox already in UI)
 - [ ] Modify `src/components/Navbar/Navbar.jsx`:
   - [ ] Replace `workmate_signed_in` check with token validation
   - [ ] Update `handleSignOut()` to call API and clear token

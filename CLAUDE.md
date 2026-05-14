@@ -28,7 +28,7 @@ All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`src/App.jsx`]
 | File | Route | Description |
 |---|---|---|
 | `landing.jsx` | `/` | Cinematic hero page with a fullscreen background video, sticky navbar, and scroll-reveal sections (About, Reach Us). First entry point for unauthenticated visitors. |
-| `login.jsx` | `/login` | Sign-in / sign-up form with role selector (Candidate / Employer). Validates against demo credentials from `user.json` and writes auth flags to `localStorage` on success. |
+| `login.jsx` | `/login` | Two-column layout: left branding panel with animated floating bubbles; right panel with sign-in / sign-up tab switcher. Sign-in validates email + password against `MOCK_USERS` from `user.json` — role is inferred from the matched record via `normalizeRole()` (no role selector on sign-in). Sign-up tab shows a Candidate / Employer role toggle; the name field label adapts to the selected role. Sign-in form includes a show/hide password toggle and a "Remember me" checkbox (UI only). On success writes `workmate_signed_in`, email, and role to `localStorage` via `userService.js` and redirects to `/dashboard`. |
 | `dashboard.jsx` | `/dashboard` | Main app home after sign-in. Displays a job card grid, a social post feed, a news ticker, and a contact sidebar — all powered by inline mock data. |
 | `recommended_job.jsx` | `/recommended-jobs` | Candidate-facing page with three job sections (AI-chosen, based on viewed jobs, related roles). Includes a collapsible `JobFilter` panel and show-more toggle per section. |
 | `recommended_candidate.jsx` | `/recommended-candidates` | Employer-facing mirror of the above; shows candidate cards in three sections (AI-chosen, search history, saved). Uses `CandidateFilter` and the same expand/collapse pattern. |
@@ -89,7 +89,7 @@ Components live under `src/components/` in feature folders (`ComponentName/Compo
 
 ## State & Data Flow
 
-- **Auth session:** Login sets three `localStorage` keys — `workmate_signed_in` (`'true'`), `workmate_current_user_email`, and `workmate_user_role`. Navbar reads these on mount to decide which links and dropdown items to show; sign-out removes all three.
+- **Auth session:** Login sets three `localStorage` keys — `workmate_signed_in` (`'true'`), `workmate_current_user_email`, and `workmate_user_role` — via `setCurrentUserEmail()` and `setCurrentUserRole()` helpers in `userService.js`. Role is inferred from the matched user record (not from a form selector on sign-in). Navbar reads these keys on mount to decide which links and dropdown items to show; sign-out removes all three.
 - **User data:** `src/services/userService.js` exports helpers (`getCurrentUser`, `findUserByEmail`, `getCurrentUserRole`, etc.) that read from `localStorage` and look up records in `src/data/user.json`. Two demo accounts exist: `user@user.com` (candidate) and `employer@employer.com` (employer), both with password `1`.
 - **Page-level state:** Every page manages its own UI state with `useState` — form fields, filter values, show-more toggles, file previews, validation errors. There is no shared global state store.
 - **Mock data:** Job listings, candidates, posts, and news items are defined as `const` arrays inline inside each page file. Comments throughout mark the exact places to replace with API calls (`// BACKEND DEV NOTE`, `// TODO (backend integration)`).

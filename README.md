@@ -48,9 +48,10 @@ The app runs at `http://localhost:5173`.
 ## Website Flow & Architecture
 
 ### Authentication Flow
-1. **Landing Page** (`/login`) - Users sign in or create an account as either a **Candidate** or **Employer**
-2. **Role Selection** - The UI adapts based on the selected role (candidate vs employer)
-3. **Session Management** - Auth state stored in `localStorage` (to be replaced with JWT when backend is ready)
+1. **Landing Page** (`/login`) - Two-column layout: left branding panel with animated floating bubbles; right panel with sign-in / sign-up tab switcher
+2. **Sign In** - Email + password only; role is inferred from the matched user record (no role selector on sign-in). Includes show/hide password toggle and a "Remember me" checkbox (UI only — not yet functional)
+3. **Sign Up** - Role selector (Candidate / Employer) appears; the name field label adapts ("Full Name" vs "Company Name")
+4. **Session Management** - Auth state stored in `localStorage` via `userService.js` (`workmate_signed_in`, `workmate_current_user_email`, `workmate_user_role`); redirects to `/dashboard` on success (to be replaced with JWT when backend is ready)
 
 ### Page Structure
 
