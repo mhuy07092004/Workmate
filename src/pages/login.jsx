@@ -2,7 +2,7 @@
  * login.jsx — Landing page (sign-in / sign-up)
  *
  * TODO (backend integration):
- *   - Replace SIGN_IN_USERS with a real POST /api/auth/login call
+ *   - Replace MOCK_USERS with a real POST /api/auth/login call
  *   - Replace the sign-up success stub with a POST /api/auth/register call
  *   - Store the returned JWT / session token (e.g. in Context or localStorage)
  */
@@ -12,12 +12,16 @@ import userData from '../data/user.json'
 import { setCurrentUserEmail, setCurrentUserRole } from '../services/userService.js'
 
 /**
- * Demo credentials loaded from user.json
+ * Mock users loaded from user.json.
+ *
+ * BACKEND DEV NOTE:
+ * - Sign-in now checks email + password only.
+ * - Role is inferred from the matched user record and persisted for role-based redirect/UI.
+ * - Current role values in mock data are expected to be "candidate" | "employer".
+ * - Replace this local lookup with POST /api/auth/login and use the returned user.role.
  * REMOVE THIS before going to production
  */
-const SIGN_IN_USERS = Object.fromEntries(
-  userData.users.map(u => [u.role, { email: u.email, password: u.password }])
-)
+const MOCK_USERS = userData.users
 
 /** Human-readable labels for each role, used in success/error messages. */
 const ROLE_LABELS = {
@@ -53,6 +57,7 @@ function Login() {
     email: '',
     password: '',
   })
+  const [showSignInPassword, setShowSignInPassword] = useState(false)
 
   /** Controlled fields for the sign-up form */
   const [signUpForm, setSignUpForm] = useState({
@@ -98,25 +103,27 @@ function Login() {
     event.preventDefault()
     resetMessages()
 
-    if (!signInForm.email || !signInForm.password || !selectedRole) {
-      setError('Email, password, and role are required for sign in.')
+    if (!signInForm.email || !signInForm.password) {
+      setError('Email and password are required for sign in.')
       return
     }
 
-    const roleKey = normalizeRole(selectedRole)
-    const user = SIGN_IN_USERS[roleKey]
+    const normalizedEmail = signInForm.email.trim().toLowerCase()
+    const matchedUser = MOCK_USERS.find(
+      (user) =>
+        user.email.trim().toLowerCase() === normalizedEmail &&
+        user.password === signInForm.password
+    )
 
-    const isValidUser =
-      signInForm.email.trim().toLowerCase() === user.email &&
-      signInForm.password === user.password
-
-    if (!isValidUser) {
-      setError('Invalid sign in credentials for the selected role.')
+    if (!matchedUser) {
+      setError('Invalid sign in credentials.')
       return
     }
+
+    const roleKey = normalizeRole(matchedUser.role)
 
     localStorage.setItem('workmate_signed_in', 'true')
-    setCurrentUserEmail(user.email)
+    setCurrentUserEmail(matchedUser.email)
     setCurrentUserRole(roleKey)
     navigate('/dashboard', { replace: true })
   }
@@ -233,38 +240,42 @@ function Login() {
             </button>
           </div>
 
-          <p className="mt-4 mb-2.5 text-slate-700 font-bold"></p>
-          <div
-            className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative"
-            role="radiogroup"
-            aria-label="Account type"
-          >
-            <div
-              className="absolute top-1 bottom-1 bg-white rounded-full shadow-[0_2px_12px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out pointer-events-none"
-              style={{
-                width: 'calc(50% - 6px)',
-                left: selectedRole === 'candidate' ? '4px' : 'calc(50% + 2px)',
-              }}
-            />
-            <button
-              type="button"
-              role="radio"
-              aria-checked={selectedRole === 'candidate'}
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'candidate' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-              onClick={() => handleRoleChange('candidate')}
-            >
-              Candidate
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={selectedRole === 'employer'}
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'employer' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-              onClick={() => handleRoleChange('employer')}
-            >
-              Employer
-            </button>
-          </div>
+          {activeTab === 'signup' ? (
+            <>
+              <p className="mt-4 mb-2.5 text-slate-700 font-bold"></p>
+              <div
+                className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative"
+                role="radiogroup"
+                aria-label="Account type"
+              >
+                <div
+                  className="absolute top-1 bottom-1 bg-white rounded-full shadow-[0_2px_12px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out pointer-events-none"
+                  style={{
+                    width: 'calc(50% - 6px)',
+                    left: selectedRole === 'candidate' ? '4px' : 'calc(50% + 2px)',
+                  }}
+                />
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedRole === 'candidate'}
+                  className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'candidate' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
+                  onClick={() => handleRoleChange('candidate')}
+                >
+                  Candidate
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedRole === 'employer'}
+                  className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'employer' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
+                  onClick={() => handleRoleChange('employer')}
+                >
+                  Employer
+                </button>
+              </div>
+            </>
+          ) : null}
 
           {/* Conditionally render sign-in or sign-up form based on active tab */}
           {activeTab === 'signin' ? (
@@ -282,16 +293,45 @@ function Login() {
               />
 
               <label htmlFor="signin-password" className="mt-1 text-slate-700 font-bold">Password</label>
-              <input
-                id="signin-password"
-                type="password"
-                placeholder="Enter your password"
-                value={signInForm.password}
-                onChange={(event) =>
-                  setSignInForm((prev) => ({ ...prev, password: event.target.value }))
-                }
-                className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
-              />
+              <div className="relative">
+                <input
+                  id="signin-password"
+                  type={showSignInPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={signInForm.password}
+                  onChange={(event) =>
+                    setSignInForm((prev) => ({ ...prev, password: event.target.value }))
+                  }
+                  className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 pl-3.5 pr-11 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignInPassword((prev) => !prev)}
+                  aria-label={showSignInPassword ? 'Hide password' : 'Show password'}
+                  className="absolute inset-y-0 right-0 px-3 text-slate-500 hover:text-slate-700"
+                >
+                  {showSignInPassword ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" aria-hidden="true">
+                      <path
+                        d="M3 3l18 18M10.6 10.6A2 2 0 0013.4 13.4M9.9 4.2A10.8 10.8 0 0112 4c4.8 0 8.5 3.1 10 8a11.6 11.6 0 01-3.1 4.9M6.1 6.1A11.7 11.7 0 002 12c1.5 4.9 5.2 8 10 8a10.7 10.7 0 004-.8"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" aria-hidden="true">
+                      <path
+                        d="M2 12c1.5-4.9 5.2-8 10-8s8.5 3.1 10 8c-1.5 4.9-5.2 8-10 8s-8.5-3.1-10-8z"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="12" cy="12" r="3" strokeWidth="1.8" />
+                    </svg>
+                  )}
+                </button>
+              </div>
 
               {/* TODO: Remember me functionality - implement persistence logic */}
               <div className="flex items-center gap-2 mt-2">
