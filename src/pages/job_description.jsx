@@ -14,9 +14,53 @@ import Footer from '../components/Footer/Footer.jsx'
 import JobTitle from '../components/JobDesription/JobTitle.jsx'
 import JobDetails from '../components/JobDesription/JobDetails.jsx'
 import ApplyJob from '../components/Button/ApplyJob.jsx'
+import CandidateCard from '../components/CandidateCard/CandidateCard.jsx'
 import { getPostedJobById } from '../services/jobStore.js'
+import { getCurrentUserRole } from '../services/userService.js'
 
-// Mock data for job description
+// Mock applicants shown when the employer views their own sample listing
+const MOCK_SAMPLE_APPLICANTS = [
+  { id: 1, fullName: 'John Smith', location: 'Sydney, NSW', jobApplied: 'sample test' },
+  { id: 2, fullName: 'Sarah Johnson', location: 'Melbourne, VIC', jobApplied: 'sample test' },
+  { id: 3, fullName: 'Michael Chen', location: 'Brisbane, QLD', jobApplied: 'sample test' },
+]
+
+// Dedicated mock detail for the employer-owned sample listing
+const MOCK_SAMPLE_JOB = {
+  id: 'sample',
+  title: 'sample test',
+  company: 'TechCorp Inc.',
+  postedDate: '2026-05-16',
+  location: 'San Francisco, CA',
+  type: 'Full Time',
+  salary: '$120k - $160k',
+  description: {
+    requirements: `We are looking for a talented engineer to join TechCorp Inc. You will work closely with our product and design teams to build next-generation software solutions.
+
+Key Responsibilities:
+• Build and maintain web applications using React and Node.js
+• Write automated tests and participate in code reviews
+• Collaborate with stakeholders to refine product requirements
+• Contribute to architecture and technical design discussions`,
+    whatWeNeed: `Required Qualifications:
+• Bachelor's degree in Computer Science or equivalent experience
+• 2+ years of professional software development
+• Proficiency in JavaScript/TypeScript, React, and REST APIs
+• Familiarity with Git and agile workflows
+
+Preferred Qualifications:
+• Experience with cloud services (AWS, GCP)
+• Knowledge of CI/CD pipelines`,
+    aboutCompany: `TechCorp Inc. is a fast-growing technology company building next-generation software solutions. Based in San Francisco, we look for passionate individuals who want to make an impact.`,
+    benefits: `• Competitive salary and equity
+• Comprehensive health insurance
+• Flexible remote work policy
+• Professional development stipend
+• Generous PTO and parental leave`,
+  },
+}
+
+// Mock data for job description (default / non-sample)
 const MOCK_JOB_DATA = {
   id: 1,
   title: 'Senior Software Engineer',
@@ -86,24 +130,29 @@ function JobDescription() {
     return lines.length > 0 ? '\n\nAdditional Requirements:\n• ' + lines.join('\n• ') : ''
   }
 
-  const job = postedJob
-    ? {
-        ...MOCK_JOB_DATA,
-        id: postedJob.id,
-        title: postedJob.title,
-        company: postedJob.company,
-        location: postedJob.location,
-        type: `${postedJob.employmentType} · ${postedJob.workArrangement}`,
-        salary: postedJob.salary || MOCK_JOB_DATA.salary,
-        description: {
-          ...MOCK_JOB_DATA.description,
-          requirements: (postedJob.description || MOCK_JOB_DATA.description.requirements) + buildPostedJobExtras(postedJob),
-          whatWeNeed: postedJob.skills
-            ? `Required Skills: ${postedJob.skills}\n\nYears of Experience: ${postedJob.experience ?? 'Not specified'}`
-            : MOCK_JOB_DATA.description.whatWeNeed,
-        },
-      }
-    : MOCK_JOB_DATA
+  // Resolve the job object: sample listing → employer-posted store → generic mock
+  const job = id === 'sample'
+    ? MOCK_SAMPLE_JOB
+    : postedJob
+      ? {
+          ...MOCK_JOB_DATA,
+          id: postedJob.id,
+          title: postedJob.title,
+          company: postedJob.company,
+          location: postedJob.location,
+          type: `${postedJob.employmentType} · ${postedJob.workArrangement}`,
+          salary: postedJob.salary || MOCK_JOB_DATA.salary,
+          description: {
+            ...MOCK_JOB_DATA.description,
+            requirements: (postedJob.description || MOCK_JOB_DATA.description.requirements) + buildPostedJobExtras(postedJob),
+            whatWeNeed: postedJob.skills
+              ? `Required Skills: ${postedJob.skills}\n\nYears of Experience: ${postedJob.experience ?? 'Not specified'}`
+              : MOCK_JOB_DATA.description.whatWeNeed,
+          },
+        }
+      : MOCK_JOB_DATA
+
+  const isOwnerView = getCurrentUserRole() === 'employer' && id === 'sample'
 
   const handleApply = () => {
     // Backend DEV NOTE: Implement application submission
@@ -123,9 +172,9 @@ function JobDescription() {
           postedDate={job.postedDate}
         />
 
-        {/* Apply Button Section */}
+        {/* Action row — employer owner sees meta only; candidates see Apply button */}
         <div className="mt-6 flex items-center gap-4">
-          <ApplyJob onClick={handleApply} />
+          {!isOwnerView && <ApplyJob onClick={handleApply} />}
           <div className="text-slate-600">
             <span className="font-medium">{job.location}</span>
             <span className="mx-2 text-slate-400">|</span>
@@ -134,6 +183,19 @@ function JobDescription() {
             <span className="text-green-600 font-medium">{job.salary}</span>
           </div>
         </div>
+
+        {/* Candidates Applied — only visible to the employer who owns this listing */}
+        {isOwnerView && (
+          <section className="mt-8">
+            <h2 className="text-[1.3rem] font-semibold text-slate-900 mb-1">Candidates Applied</h2>
+            <p className="text-slate-600 mb-5">Applicants who have expressed interest in this role</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {MOCK_SAMPLE_APPLICANTS.map(c => (
+                <CandidateCard key={c.id} candidate={c} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Job Details Section */}
         <div className="mt-6">

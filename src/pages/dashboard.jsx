@@ -18,12 +18,13 @@ import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
 import { getPostedJobs } from '../services/jobStore.js'
+import { getCurrentUserRole } from '../services/userService.js'
 import NewsCard from '../components/NewsCard/NewsCard.jsx'
 import Contact from '../components/Contact/Contact.jsx'
 import Post from '../components/Posts/Post.jsx'
 import Showmore from '../components/Button/Showmore.jsx'
 
-// Mock job data
+// Mock job data for candidates
 const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
   id: index + 1,
   title: 'Fresher Frontend Developer',
@@ -32,6 +33,19 @@ const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
   location: 'Sydney, NSW',
   postedTime: 'Posted 3 weeks ago'
 }))
+
+// Employer's own posted job (single mock listing)
+const MOCK_EMPLOYER_POSTED_JOBS = [
+  {
+    id: 'sample',
+    title: 'sample test',
+    company: 'TechCorp Inc.',
+    type: 'Full Time',
+    location: 'San Francisco, CA',
+    postedTime: 'Posted 1 day ago',
+    salary: '$120k - $160k',
+  }
+]
 
 // Mock posts data
 const MOCK_POSTS = [
@@ -80,8 +94,13 @@ const MOCK_NEWS = [
 ]
 
 function Dashboard() {
-  // Merge employer-posted jobs so newly posted listings show up on the home feed
-  const allJobs = useMemo(() => [...MOCK_JOBS, ...getPostedJobs()], [])
+  const isEmployer = getCurrentUserRole() === 'employer'
+
+  // Candidates see the full recommended-jobs feed; employers see only their posted listings
+  const allJobs = useMemo(
+    () => isEmployer ? MOCK_EMPLOYER_POSTED_JOBS : [...MOCK_JOBS, ...getPostedJobs()],
+    [isEmployer],
+  )
 
   const [visibleJobs, setVisibleJobs] = useState(6)
   const [visibleNews, setVisibleNews] = useState(4)
@@ -123,11 +142,17 @@ function Dashboard() {
           </p>
         </section>
 
-        {/* Recommendation Section */}
+        {/* Jobs Section — employer sees posted jobs, candidate sees recommendations */}
         <section>
           <div className="mb-6">
-            <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Recommended Jobs</h2>
-            <p className="text-slate-600">Personalized job recommendations based on your profile and preferences</p>
+            <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">
+              {isEmployer ? 'Posted Jobs' : 'Recommended Jobs'}
+            </h2>
+            <p className="text-slate-600">
+              {isEmployer
+                ? 'Your active job listings'
+                : 'Personalized job recommendations based on your profile and preferences'}
+            </p>
           </div>
           
           {/* Job cards grid */}
@@ -137,14 +162,16 @@ function Dashboard() {
             ))}
           </div>
           
-          {/* Show More/Show Less buttons */}
-          <Showmore
-            visibleCount={visibleJobs}
-            totalCount={allJobs.length}
-            initialCount={6}
-            onShowMore={handleShowMoreJobs}
-            onShowLess={() => setVisibleJobs(6)}
-          />
+          {/* Show More/Show Less — hidden when total fits in a single page */}
+          {allJobs.length > 6 && (
+            <Showmore
+              visibleCount={visibleJobs}
+              totalCount={allJobs.length}
+              initialCount={6}
+              onShowMore={handleShowMoreJobs}
+              onShowLess={() => setVisibleJobs(6)}
+            />
+          )}
         </section>
 
         {/* Hiring News Section */}
