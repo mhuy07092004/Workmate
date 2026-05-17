@@ -148,6 +148,16 @@ interface Job {
   location: string
   postedTime: string       // display: "Posted 3 days ago"
   salaryRange?: string     // "$100k - $150k"
+  // Candidate requirement fields (added in post_job form)
+  certification?: string   // e.g. "AWS" | "No certification required"
+  major?: string           // e.g. "Computer Science"
+  industry?: string        // e.g. "Technology" | "Finance" | ...
+  roleLevel?: string       // "Intern" | "Fresher" | "Junior" | "Mid-level" | "Senior" | "Lead" | "Manager" | "Director"
+  preferredLanguages?: string[]  // e.g. ["English", "Vietnamese"]
+  availability?: {
+    mode: string           // "Immediately" | "Within 2 weeks" | "Next month" | "Within 3 months" | "Specific date"
+    date: string | null    // ISO date string, only when mode === "Specific date"
+  }
   // For job detail page:
   description?: {
     requirements: string

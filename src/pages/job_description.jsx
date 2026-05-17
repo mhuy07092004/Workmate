@@ -67,6 +67,25 @@ function JobDescription() {
   // TODO (backend integration): fetch from GET /api/jobs/:id
   // For now, check the employer-posted store first, then fall back to mock data.
   const postedJob = getPostedJobById(id)
+
+  function buildPostedJobExtras(pj) {
+    const lines = []
+    if (pj.industry) lines.push(`Industry: ${pj.industry}`)
+    if (pj.roleLevel) lines.push(`Role Level: ${pj.roleLevel}`)
+    if (pj.majorField || pj.major) lines.push(`Major / Field of Study: ${pj.majorField || pj.major}`)
+    if (pj.certification) lines.push(`Required Certification: ${pj.certification}`)
+    if (pj.preferredLanguages && pj.preferredLanguages.length > 0) {
+      lines.push(`Preferred Languages: ${pj.preferredLanguages.join(', ')}`)
+    }
+    if (pj.availability && pj.availability.mode) {
+      const avail = pj.availability.date
+        ? `${pj.availability.mode} (${pj.availability.date})`
+        : pj.availability.mode
+      lines.push(`Start Availability: ${avail}`)
+    }
+    return lines.length > 0 ? '\n\nAdditional Requirements:\n• ' + lines.join('\n• ') : ''
+  }
+
   const job = postedJob
     ? {
         ...MOCK_JOB_DATA,
@@ -76,6 +95,13 @@ function JobDescription() {
         location: postedJob.location,
         type: `${postedJob.employmentType} · ${postedJob.workArrangement}`,
         salary: postedJob.salary || MOCK_JOB_DATA.salary,
+        description: {
+          ...MOCK_JOB_DATA.description,
+          requirements: (postedJob.description || MOCK_JOB_DATA.description.requirements) + buildPostedJobExtras(postedJob),
+          whatWeNeed: postedJob.skills
+            ? `Required Skills: ${postedJob.skills}\n\nYears of Experience: ${postedJob.experience ?? 'Not specified'}`
+            : MOCK_JOB_DATA.description.whatWeNeed,
+        },
       }
     : MOCK_JOB_DATA
 

@@ -4,24 +4,36 @@
  * Single source of truth for:
  *   - EMPLOYMENT_TYPES / WORK_ARRANGEMENTS  (used by post_job form AND JobFilter)
  *   - EDUCATION_LEVELS                      (form dropdown)
+ *   - JOB_CERTIFICATIONS                   (form + JobFilter, with "No certification required")
+ *   - JOB_INDUSTRIES                        (form + JobFilter)
+ *   - ROLE_LEVELS                           (form + JobFilter)
+ *   - PREFERRED_LANGUAGES                   (form + JobFilter)
+ *   - AVAILABILITY_MODES                    (form dropdown, availability start)
  *   - appendPostedJob / getPostedJobs       (localStorage, key workmate_posted_jobs)
  *   - normalizePostedJob                    (maps raw form data → canonical job object)
  *
  * The canonical job object shape expected by JobCard and JobFilter:
  * {
- *   id            : number | string,
- *   title         : string,
- *   company       : string,          // short display name
- *   employmentType: string,          // one of EMPLOYMENT_TYPES
- *   workArrangement: string,         // one of WORK_ARRANGEMENTS
- *   location      : string,
- *   postedTime    : string,          // human-readable, e.g. "Posted just now"
+ *   id                  : number | string,
+ *   title               : string,
+ *   company             : string,          // short display name
+ *   employmentType      : string,          // one of EMPLOYMENT_TYPES
+ *   workArrangement     : string,          // one of WORK_ARRANGEMENTS
+ *   location            : string,
+ *   postedTime          : string,          // human-readable, e.g. "Posted just now"
  *   // optional — present when available
- *   salary        : string,          // e.g. "$100k - $150k"
- *   experience    : number,          // years (raw number from form)
- *   educationLevel: string,          // from EDUCATION_LEVELS
- *   description   : string,
- *   skills        : string,
+ *   salary              : string,          // e.g. "$100k - $150k"
+ *   experience          : number,          // years (raw number from form)
+ *   educationLevel      : string,          // from EDUCATION_LEVELS
+ *   description         : string,
+ *   skills              : string,
+ *   // new fields added by post_job form
+ *   certification       : string,          // from JOB_CERTIFICATIONS
+ *   major               : string,          // free text, e.g. "Computer Science"
+ *   industry            : string,          // from JOB_INDUSTRIES
+ *   roleLevel           : string,          // from ROLE_LEVELS
+ *   preferredLanguages  : string[],        // subset of PREFERRED_LANGUAGES
+ *   availability        : { mode: string, date: string|null }, // mode from AVAILABILITY_MODES
  * }
  */
 
@@ -36,6 +48,53 @@ export const EDUCATION_LEVELS = [
   "Master's Degree",
   'PhD',
   'No specific education required',
+]
+
+export const JOB_CERTIFICATIONS = [
+  'No certification required',
+  'AWS',
+  'Azure',
+  'GCP',
+  'PMP',
+  'Scrum Master',
+  'CISSP',
+  'CompTIA A+',
+  'CPA',
+  'Other',
+]
+
+export const JOB_INDUSTRIES = [
+  'Technology',
+  'Finance',
+  'Healthcare',
+  'Education',
+  'Retail',
+  'Media & Entertainment',
+  'Consulting',
+  'Manufacturing',
+  'Real Estate',
+  'Other',
+]
+
+export const ROLE_LEVELS = ['Intern', 'Fresher', 'Junior', 'Mid-level', 'Senior', 'Lead', 'Manager', 'Director']
+
+export const PREFERRED_LANGUAGES = [
+  'English',
+  'Vietnamese',
+  'Mandarin',
+  'Japanese',
+  'Korean',
+  'Spanish',
+  'French',
+  'German',
+]
+
+export const AVAILABILITY_MODES = [
+  'Immediately',
+  'Within 2 weeks',
+  'Next month',
+  'Within 3 months',
+  'Specific date',
 ]
 
 const STORAGE_KEY = 'workmate_posted_jobs'
@@ -68,6 +127,15 @@ export function normalizePostedJob(formData) {
     educationLevel: formData.educationLevel,
     description: formData.jobDescription,
     skills: formData.requiredSkills,
+    certification: formData.requiredCertification,
+    major: formData.majorField.trim(),
+    industry: formData.industry,
+    roleLevel: formData.roleLevel,
+    preferredLanguages: [...(formData.preferredLanguages || [])],
+    availability: {
+      mode: formData.availabilityMode,
+      date: formData.availabilityMode === 'Specific date' ? (formData.availabilityDate || null) : null,
+    },
   }
 }
 

@@ -86,9 +86,31 @@ export function matchesJobFilters(job, filters) {
     if (minYears !== null && job.experience < minYears) return false
   }
 
-  // Fields that exist on some jobs but not others (salary, industry, jobCategory,
-  // certification, language, roleLevel, dayPosted, sortBy): skip when the job
-  // object does not carry the field, so legacy mocks remain visible.
+  // Fields that exist on some jobs but not others (salary, jobCategory, dayPosted,
+  // sortBy): skip when the job object does not carry the field, so legacy mocks
+  // remain visible.
+
+  // --- enum: industry ---
+  if (filters.industry && job.industry !== undefined) {
+    if (job.industry !== filters.industry) return false
+  }
+
+  // --- enum: roleLevel ---
+  if (filters.roleLevel && job.roleLevel !== undefined) {
+    if (job.roleLevel !== filters.roleLevel) return false
+  }
+
+  // --- enum: certification ---
+  // JobFilter stores "None"; posted jobs store "No certification required" — treat as equivalent.
+  if (filters.certification && job.certification !== undefined) {
+    const filterVal = filters.certification === 'None' ? 'No certification required' : filters.certification
+    if (job.certification !== filterVal) return false
+  }
+
+  // --- language: job.preferredLanguages is an array; filter is a single string ---
+  if (filters.language && job.preferredLanguages !== undefined) {
+    if (!job.preferredLanguages.includes(filters.language)) return false
+  }
 
   return true
 }

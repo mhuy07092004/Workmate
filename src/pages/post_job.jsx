@@ -18,6 +18,11 @@ import {
   EMPLOYMENT_TYPES,
   WORK_ARRANGEMENTS,
   EDUCATION_LEVELS,
+  JOB_CERTIFICATIONS,
+  JOB_INDUSTRIES,
+  ROLE_LEVELS,
+  PREFERRED_LANGUAGES,
+  AVAILABILITY_MODES,
   normalizePostedJob,
   appendPostedJob,
 } from '../services/jobStore.js'
@@ -35,6 +40,13 @@ function PostJob() {
     workArrangement: WORK_ARRANGEMENTS[0],
     jobLocation: '',
     salary: '',
+    requiredCertification: '',
+    majorField: '',
+    industry: '',
+    roleLevel: '',
+    preferredLanguages: [],
+    availabilityMode: '',
+    availabilityDate: '',
   })
 
   const [errors, setErrors] = useState({})
@@ -54,6 +66,21 @@ function PostJob() {
         ...prev,
         [name]: ''
       }))
+    }
+  }
+
+  const handleLanguageToggle = (lang) => {
+    setFormData(prev => {
+      const already = prev.preferredLanguages.includes(lang)
+      return {
+        ...prev,
+        preferredLanguages: already
+          ? prev.preferredLanguages.filter(l => l !== lang)
+          : [...prev.preferredLanguages, lang],
+      }
+    })
+    if (errors.preferredLanguages) {
+      setErrors(prev => ({ ...prev, preferredLanguages: '' }))
     }
   }
 
@@ -96,6 +123,32 @@ function PostJob() {
       newErrors.jobLocation = 'Job location is required'
     }
 
+    if (!formData.requiredCertification) {
+      newErrors.requiredCertification = 'Please select a certification requirement'
+    }
+
+    if (!formData.majorField.trim()) {
+      newErrors.majorField = 'Major / field of study is required'
+    }
+
+    if (!formData.industry) {
+      newErrors.industry = 'Industry is required'
+    }
+
+    if (!formData.roleLevel) {
+      newErrors.roleLevel = 'Role level is required'
+    }
+
+    if (formData.preferredLanguages.length === 0) {
+      newErrors.preferredLanguages = 'Please select at least one preferred language'
+    }
+
+    if (!formData.availabilityMode) {
+      newErrors.availabilityMode = 'Availability is required'
+    } else if (formData.availabilityMode === 'Specific date' && !formData.availabilityDate) {
+      newErrors.availabilityDate = 'Please select a specific start date'
+    }
+
     return newErrors
   }
 
@@ -127,6 +180,13 @@ function PostJob() {
         workArrangement: WORK_ARRANGEMENTS[0],
         jobLocation: '',
         salary: '',
+        requiredCertification: '',
+        majorField: '',
+        industry: '',
+        roleLevel: '',
+        preferredLanguages: [],
+        availabilityMode: '',
+        availabilityDate: '',
       })
       setSuccessMessage(`"${job.title}" has been posted successfully!`)
       setTimeout(() => setSuccessMessage(''), 5000)
@@ -283,6 +343,100 @@ function PostJob() {
               </div>
             </div>
 
+            {/* Industry + Role Level — side by side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="industry" className="block text-sm font-medium text-slate-700 mb-2">
+                  Industry *
+                </label>
+                <select
+                  id="industry"
+                  name="industry"
+                  value={formData.industry}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    errors.industry ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
+                >
+                  <option value="">Select industry</option>
+                  {JOB_INDUSTRIES.map(ind => (
+                    <option key={ind} value={ind}>{ind}</option>
+                  ))}
+                </select>
+                {errors.industry && (
+                  <p className="mt-1 text-sm text-red-600">{errors.industry}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="roleLevel" className="block text-sm font-medium text-slate-700 mb-2">
+                  Role Level *
+                </label>
+                <select
+                  id="roleLevel"
+                  name="roleLevel"
+                  value={formData.roleLevel}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    errors.roleLevel ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
+                >
+                  <option value="">Select role level</option>
+                  {ROLE_LEVELS.map(lvl => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
+                {errors.roleLevel && (
+                  <p className="mt-1 text-sm text-red-600">{errors.roleLevel}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Major / Field of Study */}
+            <div>
+              <label htmlFor="majorField" className="block text-sm font-medium text-slate-700 mb-2">
+                Major / Field of Study *
+              </label>
+              <input
+                type="text"
+                id="majorField"
+                name="majorField"
+                value={formData.majorField}
+                onChange={handleInputChange}
+                className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                  errors.majorField ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                }`}
+                placeholder="e.g. Computer Science, Software Engineering"
+              />
+              {errors.majorField && (
+                <p className="mt-1 text-sm text-red-600">{errors.majorField}</p>
+              )}
+            </div>
+
+            {/* Required Certification */}
+            <div>
+              <label htmlFor="requiredCertification" className="block text-sm font-medium text-slate-700 mb-2">
+                Required Certification *
+              </label>
+              <select
+                id="requiredCertification"
+                name="requiredCertification"
+                value={formData.requiredCertification}
+                onChange={handleInputChange}
+                className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                  errors.requiredCertification ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                }`}
+              >
+                <option value="">Select certification requirement</option>
+                {JOB_CERTIFICATIONS.map(cert => (
+                  <option key={cert} value={cert}>{cert}</option>
+                ))}
+              </select>
+              {errors.requiredCertification && (
+                <p className="mt-1 text-sm text-red-600">{errors.requiredCertification}</p>
+              )}
+            </div>
+
             {/* Required Skills */}
             <div>
               <label htmlFor="requiredSkills" className="block text-sm font-medium text-slate-700 mb-2">
@@ -383,6 +537,83 @@ function PostJob() {
               />
               {errors.jobLocation && (
                 <p className="mt-1 text-sm text-red-600">{errors.jobLocation}</p>
+              )}
+            </div>
+
+            {/* Preferred Languages */}
+            <div>
+              <p className="block text-sm font-medium text-slate-700 mb-3">
+                Preferred Languages * <span className="font-normal text-slate-400">(select at least one)</span>
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {PREFERRED_LANGUAGES.map(lang => {
+                  const selected = formData.preferredLanguages.includes(lang)
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleLanguageToggle(lang)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border-[1.5px] transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 ${
+                        selected
+                          ? 'bg-blue-700 border-blue-700 text-white'
+                          : 'bg-white border-slate-300 text-slate-700 hover:border-blue-500 hover:text-blue-700'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  )
+                })}
+              </div>
+              {errors.preferredLanguages && (
+                <p className="mt-2 text-sm text-red-600">{errors.preferredLanguages}</p>
+              )}
+            </div>
+
+            {/* Availability */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="availabilityMode" className="block text-sm font-medium text-slate-700 mb-2">
+                  Required Start Availability *
+                </label>
+                <select
+                  id="availabilityMode"
+                  name="availabilityMode"
+                  value={formData.availabilityMode}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    errors.availabilityMode ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
+                >
+                  <option value="">Select availability</option>
+                  {AVAILABILITY_MODES.map(mode => (
+                    <option key={mode} value={mode}>{mode}</option>
+                  ))}
+                </select>
+                {errors.availabilityMode && (
+                  <p className="mt-1 text-sm text-red-600">{errors.availabilityMode}</p>
+                )}
+              </div>
+
+              {formData.availabilityMode === 'Specific date' && (
+                <div>
+                  <label htmlFor="availabilityDate" className="block text-sm font-medium text-slate-700 mb-2">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="availabilityDate"
+                    name="availabilityDate"
+                    value={formData.availabilityDate}
+                    onChange={handleInputChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                      errors.availabilityDate ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                    }`}
+                  />
+                  {errors.availabilityDate && (
+                    <p className="mt-1 text-sm text-red-600">{errors.availabilityDate}</p>
+                  )}
+                </div>
               )}
             </div>
 
