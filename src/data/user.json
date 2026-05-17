@@ -23,14 +23,13 @@
       "fullName": "Jane Employer",
       "emailAddress": "employer@employer.com",
       "phoneNumber": "+1 555-0200",
-      "educationLevel": "Master",
-      "major": "Business Administration",
-      "school": "Business School",
-      "position": "Hiring Manager",
+      "jobTitle": "Hiring Manager",
       "companyName": "TechCorp Inc.",
-      "from": "2020-01",
-      "until": "present",
-      "about": "Experienced hiring manager looking for talented developers to join our growing team."
+      "industry": "Technology",
+      "companySize": "51-200",
+      "companyWebsite": "https://techcorp.example.com",
+      "companyLocation": "San Francisco, CA",
+      "about": "We are a fast-growing technology company building next-generation software solutions. We look for passionate individuals who want to make an impact."
     }
   ]
 }

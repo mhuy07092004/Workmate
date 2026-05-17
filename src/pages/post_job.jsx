@@ -14,36 +14,32 @@
 import { useState } from 'react'
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
+import {
+  EMPLOYMENT_TYPES,
+  WORK_ARRANGEMENTS,
+  EDUCATION_LEVELS,
+  normalizePostedJob,
+  appendPostedJob,
+} from '../services/jobStore.js'
 
 function PostJob() {
   const [formData, setFormData] = useState({
     jobTitle: '',
+    companyName: '',
     companyInfo: '',
     jobDescription: '',
     educationLevel: '',
     requiredSkills: '',
     yearsOfExperience: '',
-    workMode: 'remote',
-    jobLocation: ''
+    employmentType: '',
+    workArrangement: WORK_ARRANGEMENTS[0],
+    jobLocation: '',
+    salary: '',
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const educationLevels = [
-    'High School',
-    'Associate Degree',
-    'Bachelor\'s Degree',
-    'Master\'s Degree',
-    'PhD',
-    'No specific education required'
-  ]
-
-  const workModes = [
-    { value: 'remote', label: 'Remote' },
-    { value: 'on-site', label: 'On-site' },
-    { value: 'hybrid', label: 'Hybrid' }
-  ]
+  const [successMessage, setSuccessMessage] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -68,14 +64,18 @@ function PostJob() {
       newErrors.jobTitle = 'Job title is required'
     }
 
-    if (!formData.companyInfo.trim()) {
-      newErrors.companyInfo = 'Company information is required'
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Company name is required'
     }
 
     if (!formData.jobDescription.trim()) {
       newErrors.jobDescription = 'Job description is required'
     } else if (formData.jobDescription.length < 50) {
       newErrors.jobDescription = 'Job description must be at least 50 characters'
+    }
+
+    if (!formData.employmentType) {
+      newErrors.employmentType = 'Employment type is required'
     }
 
     if (!formData.educationLevel) {
@@ -111,28 +111,27 @@ function PostJob() {
     setIsSubmitting(true)
 
     try {
-      // TODO: Replace with actual API call
-      console.log('Submitting job posting:', formData)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Reset form on success
+      // TODO (backend integration): Replace with POST /api/jobs
+      const job = normalizePostedJob(formData)
+      appendPostedJob(job)
+
       setFormData({
         jobTitle: '',
+        companyName: '',
         companyInfo: '',
         jobDescription: '',
         educationLevel: '',
         requiredSkills: '',
         yearsOfExperience: '',
-        workMode: 'remote',
-        jobLocation: ''
+        employmentType: '',
+        workArrangement: WORK_ARRANGEMENTS[0],
+        jobLocation: '',
+        salary: '',
       })
-      
-      alert('Job posted successfully!')
+      setSuccessMessage(`"${job.title}" has been posted successfully!`)
+      setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
       console.error('Error posting job:', error)
-      alert('Failed to post job. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -148,6 +147,12 @@ function PostJob() {
           <p className="mb-8 text-slate-600 leading-relaxed">
             Fill in the details below to create a new job posting and reach qualified candidates.
           </p>
+
+          {successMessage && (
+            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+              {successMessage}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Title */}
@@ -171,10 +176,31 @@ function PostJob() {
               )}
             </div>
 
-            {/* Company Information */}
+            {/* Company Name */}
+            <div>
+              <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-2">
+                Company Name *
+              </label>
+              <input
+                type="text"
+                id="companyName"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleInputChange}
+                className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                  errors.companyName ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                }`}
+                placeholder="e.g. Tech Solutions Inc."
+              />
+              {errors.companyName && (
+                <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>
+              )}
+            </div>
+
+            {/* Company Information (tagline / about) */}
             <div>
               <label htmlFor="companyInfo" className="block text-sm font-medium text-slate-700 mb-2">
-                Company Information *
+                Company Description
               </label>
               <input
                 type="text"
@@ -182,14 +208,9 @@ function PostJob() {
                 name="companyInfo"
                 value={formData.companyInfo}
                 onChange={handleInputChange}
-                className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
-                  errors.companyInfo ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
-                }`}
-                placeholder="e.g. Tech Solutions Inc. - Leading software development company"
+                className="w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                placeholder="e.g. Leading software development company specialising in fintech"
               />
-              {errors.companyInfo && (
-                <p className="mt-1 text-sm text-red-600">{errors.companyInfo}</p>
-              )}
             </div>
 
             {/* Job Description */}
@@ -213,28 +234,53 @@ function PostJob() {
               )}
             </div>
 
-            {/* Required Education Level */}
-            <div>
-              <label htmlFor="educationLevel" className="block text-sm font-medium text-slate-700 mb-2">
-                Required Education Level *
-              </label>
-              <select
-                id="educationLevel"
-                name="educationLevel"
-                value={formData.educationLevel}
-                onChange={handleInputChange}
-                className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
-                  errors.educationLevel ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
-                }`}
-              >
-                <option value="">Select education level</option>
-                {educationLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-              {errors.educationLevel && (
-                <p className="mt-1 text-sm text-red-600">{errors.educationLevel}</p>
-              )}
+            {/* Employment Type + Education Level — side by side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="employmentType" className="block text-sm font-medium text-slate-700 mb-2">
+                  Employment Type *
+                </label>
+                <select
+                  id="employmentType"
+                  name="employmentType"
+                  value={formData.employmentType}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    errors.employmentType ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
+                >
+                  <option value="">Select type</option>
+                  {EMPLOYMENT_TYPES.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                {errors.employmentType && (
+                  <p className="mt-1 text-sm text-red-600">{errors.employmentType}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="educationLevel" className="block text-sm font-medium text-slate-700 mb-2">
+                  Required Education Level *
+                </label>
+                <select
+                  id="educationLevel"
+                  name="educationLevel"
+                  value={formData.educationLevel}
+                  onChange={handleInputChange}
+                  className={`w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 ${
+                    errors.educationLevel ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
+                >
+                  <option value="">Select education level</option>
+                  {EDUCATION_LEVELS.map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+                {errors.educationLevel && (
+                  <p className="mt-1 text-sm text-red-600">{errors.educationLevel}</p>
+                )}
+              </div>
             </div>
 
             {/* Required Skills */}
@@ -281,26 +327,42 @@ function PostJob() {
               )}
             </div>
 
-            {/* Work Mode */}
+            {/* Work Arrangement */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Work Mode *
+                Work Arrangement *
               </label>
-              <div className="space-y-2">
-                {workModes.map(mode => (
-                  <label key={mode.value} className="flex items-center">
+              <div className="flex flex-wrap gap-4">
+                {WORK_ARRANGEMENTS.map(arrangement => (
+                  <label key={arrangement} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
-                      name="workMode"
-                      value={mode.value}
-                      checked={formData.workMode === mode.value}
+                      name="workArrangement"
+                      value={arrangement}
+                      checked={formData.workArrangement === arrangement}
                       onChange={handleInputChange}
-                      className="mr-2 text-blue-600 focus:ring-blue-600"
+                      className="text-blue-600 focus:ring-blue-600"
                     />
-                    <span className="text-slate-900">{mode.label}</span>
+                    <span className="text-slate-900">{arrangement}</span>
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Salary Range (optional) */}
+            <div>
+              <label htmlFor="salary" className="block text-sm font-medium text-slate-700 mb-2">
+                Salary Range <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleInputChange}
+                className="w-full rounded-lg border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                placeholder="e.g. $80k - $100k"
+              />
             </div>
 
             {/* Job Location */}

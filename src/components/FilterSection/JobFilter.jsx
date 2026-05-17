@@ -9,7 +9,9 @@
  *   variant        — 'page' (default card) | 'popover' (compact, no card shell)
  *   suppressFields — array of filter keys to hide (e.g. ['jobTitle'] when navbar
  *                    input already captures the job title query)
+ *   onApplyFilters — optional callback fired when the user clicks "Apply Filters"
  */
+import { EMPLOYMENT_TYPES, WORK_ARRANGEMENTS } from '../../services/jobStore.js'
 
 const FILTER_OPTIONS = {
   location: ['Sydney, NSW', 'Melbourne, VIC', 'Brisbane, QLD', 'Perth, WA', 'Adelaide, SA', 'Remote'],
@@ -17,9 +19,9 @@ const FILTER_OPTIONS = {
   jobCategory: ['Software Engineering', 'Data Science', 'Product Management', 'UX/UI Design', 'DevOps', 'QA/Testing'],
   industry: ['Technology', 'Finance', 'Healthcare', 'Education', 'Retail', 'Media', 'Consulting'],
   jobTitle: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UX Designer', 'DevOps Engineer', 'Frontend Developer', 'Backend Developer'],
-  employmentType: ['Casual', 'Part Time', 'Contract', 'Full Time'],
+  employmentType: EMPLOYMENT_TYPES,
   companyName: ['Google', 'Microsoft', 'Amazon', 'Atlassian', 'Canva', 'WiseTech', 'Xero', 'Afterpay'],
-  workArrangement: ['Remote', 'On Site', 'Hybrid'],
+  workArrangement: WORK_ARRANGEMENTS,
   certification: ['AWS', 'Azure', 'GCP', 'PMP', 'Scrum Master', 'None'],
   language: ['English', 'Vietnamese', 'Mandarin', 'Japanese', 'Korean', 'Spanish'],
   degree: ['High School', 'BSc', 'MS', 'Dr', 'Diploma', 'Certificate'],
@@ -36,6 +38,7 @@ function JobFilter({
   filters,
   onFilterChange,
   onClearFilters,
+  onApplyFilters,
   showFilters,
   setShowFilters,
   variant = 'page',
@@ -346,6 +349,7 @@ function JobFilter({
           Clear All Filters
         </button>
         <button
+          onClick={onApplyFilters}
           className="cursor-pointer rounded-full border-0 bg-blue-700 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-blue-600 hover:shadow-[0_4px_14px_rgba(37,99,235,0.3)]"
         >
           Apply Filters

@@ -3,7 +3,7 @@
  *
  * Features:
  *   - Advanced filter section for finding candidates
- *   - Three candidate recommendation sections with show more/less toggle
+ *   - Two candidate recommendation sections with show more/less toggle
  *   - Layout with Contact sidebar, main content, and Footer
  */
 import { useState } from 'react'
@@ -13,7 +13,7 @@ import Contact from '../components/Contact/Contact.jsx'
 import CandidateCard from '../components/CandidateCard/CandidateCard.jsx'
 import CandidateFilter from '../components/FilterSection/CandidateFilter.jsx'
 
-// Mock data for "Chosen By Workmate A.I" section
+// Mock data for "Recommended by Workmate A.I" section
 const AI_CHOSEN_CANDIDATES = [
   { id: 1, fullName: 'Sarah Chen', location: 'Sydney, NSW', jobApplied: 'Senior Software Engineer', experience: '5 years', degree: 'Bachelor', major: 'Computer Science' },
   { id: 2, fullName: 'Michael Johnson', location: 'Melbourne, VIC', jobApplied: 'Data Scientist', experience: '3 years', degree: 'Master', major: 'Data Science' },
@@ -29,8 +29,8 @@ const AI_CHOSEN_CANDIDATES = [
   { id: 12, fullName: 'Emma Davis', location: 'Sydney, NSW', jobApplied: 'QA Engineer', experience: '3 years', degree: 'Bachelor', major: 'Information Technology' },
 ]
 
-// Mock data for "Based on Search History" section
-const SEARCH_HISTORY_CANDIDATES = [
+// Mock data for "Skilled Matched" section
+const SKILL_MATCHED_CANDIDATES = [
   { id: 101, fullName: 'Christopher Moore', location: 'Melbourne, VIC', jobApplied: 'React Developer', experience: '2 years', degree: 'Bachelor', major: 'Software Engineering' },
   { id: 102, fullName: 'Amanda Taylor', location: 'Sydney, NSW', jobApplied: 'Node.js Developer', experience: '4 years', degree: 'Master', major: 'Computer Science' },
   { id: 103, fullName: 'Matthew Clark', location: 'Brisbane, QLD', jobApplied: 'Python Developer', experience: '3 years', degree: 'Bachelor', major: 'Data Science' },
@@ -43,22 +43,6 @@ const SEARCH_HISTORY_CANDIDATES = [
   { id: 110, fullName: 'Natalie Scott', location: 'Sydney, NSW', jobApplied: 'Go Developer', experience: '2 years', degree: 'Bachelor', major: 'Computer Science' },
   { id: 111, fullName: 'Jonathan Baker', location: 'Melbourne, VIC', jobApplied: 'Rust Developer', experience: '3 years', degree: 'Master', major: 'Computer Engineering' },
   { id: 112, fullName: 'Michelle Adams', location: 'Perth, WA', jobApplied: 'Machine Learning Engineer', experience: '5 years', degree: 'PhD', major: 'Artificial Intelligence' },
-]
-
-// Mock data for "Saved Candidates" section
-const SAVED_CANDIDATES = [
-  { id: 201, fullName: 'William Turner', location: 'Sydney, NSW', jobApplied: 'Platform Engineer', experience: '6 years', degree: 'Master', major: 'Software Engineering' },
-  { id: 202, fullName: 'Jennifer Lee', location: 'Melbourne, VIC', jobApplied: 'Site Reliability Engineer', experience: '4 years', degree: 'Bachelor', major: 'Computer Science' },
-  { id: 203, fullName: 'Robert Garcia', location: 'Brisbane, QLD', jobApplied: 'Infrastructure Engineer', experience: '5 years', degree: 'Bachelor', major: 'Information Technology' },
-  { id: 204, fullName: 'Laura Miller', location: 'Sydney, NSW', jobApplied: 'Database Administrator', experience: '7 years', degree: 'Master', major: 'Computer Science' },
-  { id: 205, fullName: 'Thomas Jackson', location: 'Perth, WA', jobApplied: 'Network Engineer', experience: '5 years', degree: 'Bachelor', major: 'Network Engineering' },
-  { id: 206, fullName: 'Karen Hernandez', location: 'Melbourne, VIC', jobApplied: 'Systems Administrator', experience: '4 years', degree: 'Bachelor', major: 'Information Systems' },
-  { id: 207, fullName: 'Steven Lopez', location: 'Sydney, NSW', jobApplied: 'Technical Support Engineer', experience: '3 years', degree: 'Diploma', major: 'IT Support' },
-  { id: 208, fullName: 'Patricia Gonzalez', location: 'Brisbane, QLD', jobApplied: 'IT Support Specialist', experience: '2 years', degree: 'Certificate', major: 'Technical Support' },
-  { id: 209, fullName: 'Charles Nelson', location: 'Melbourne, VIC', jobApplied: 'Business Analyst', experience: '4 years', degree: 'Bachelor', major: 'Business Administration' },
-  { id: 210, fullName: 'Linda Carter', location: 'Sydney, NSW', jobApplied: 'Technical Project Manager', experience: '6 years', degree: 'Master', major: 'Project Management' },
-  { id: 211, fullName: 'Joseph Mitchell', location: 'Perth, WA', jobApplied: 'QA Engineer', experience: '3 years', degree: 'Bachelor', major: 'Software Engineering' },
-  { id: 212, fullName: 'Barbara Perez', location: 'Brisbane, QLD', jobApplied: 'Test Automation Engineer', experience: '4 years', degree: 'Bachelor', major: 'Computer Science' },
 ]
 
 function RecommendedCandidate() {
@@ -81,8 +65,7 @@ function RecommendedCandidate() {
 
   const [visibleCounts, setVisibleCounts] = useState({
     aiChosen: 6,
-    viewed: 6,
-    related: 6,
+    skillMatched: 6,
   })
 
   const handleFilterChange = (key, value) => {
@@ -109,8 +92,7 @@ function RecommendedCandidate() {
   const handleShowMore = (section) => {
     const dataMap = {
       aiChosen: AI_CHOSEN_CANDIDATES,
-      viewed: SEARCH_HISTORY_CANDIDATES,
-      related: SAVED_CANDIDATES,
+      skillMatched: SKILL_MATCHED_CANDIDATES,
     }
     setVisibleCounts(prev => ({
       ...prev,
@@ -187,9 +169,8 @@ function RecommendedCandidate() {
           />
 
           {/* Candidate Sections */}
-          {renderCandidateSection('Chosen By Workmate A.I', AI_CHOSEN_CANDIDATES, visibleCounts.aiChosen, 'aiChosen')}
-          {renderCandidateSection('Based on Search History', SEARCH_HISTORY_CANDIDATES, visibleCounts.viewed, 'viewed')}
-          {renderCandidateSection('Saved Candidates', SAVED_CANDIDATES, visibleCounts.related, 'related')}
+          {renderCandidateSection('Recommended by Workmate A.I', AI_CHOSEN_CANDIDATES, visibleCounts.aiChosen, 'aiChosen')}
+          {renderCandidateSection('Skilled Matched', SKILL_MATCHED_CANDIDATES, visibleCounts.skillMatched, 'skillMatched')}
         </div>
 
         <div className="w-[240px] shrink-0 hidden xl:block" />

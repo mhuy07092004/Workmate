@@ -200,6 +200,12 @@ function Navbar() {
     setJobFilters(INITIAL_JOB_FILTERS)
   }
 
+  const handleApplyJobFilters = () => {
+    setSearchExpanded(false)
+    setShowSearchFilters(false)
+    navigate('/recommended-jobs', { state: jobFilters })
+  }
+
   const handleCandidateFilterChange = (key, value) => {
     setCandidateFilters(prev => ({ ...prev, [key]: value }))
   }
@@ -304,6 +310,7 @@ function Navbar() {
                 filters={jobFilters}
                 onFilterChange={handleJobFilterChange}
                 onClearFilters={handleClearJobFilters}
+                onApplyFilters={handleApplyJobFilters}
                 showFilters={showSearchFilters}
                 setShowFilters={setShowSearchFilters}
                 suppressFields={['jobTitle']}

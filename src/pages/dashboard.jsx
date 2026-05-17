@@ -13,10 +13,11 @@
  *   - Read the current user from AuthContext (or equivalent) to personalise the greeting
  *   - Fetch recommendation and application data from the API on mount
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
+import { getPostedJobs } from '../services/jobStore.js'
 import NewsCard from '../components/NewsCard/NewsCard.jsx'
 import Contact from '../components/Contact/Contact.jsx'
 import Post from '../components/Posts/Post.jsx'
@@ -79,12 +80,15 @@ const MOCK_NEWS = [
 ]
 
 function Dashboard() {
+  // Merge employer-posted jobs so newly posted listings show up on the home feed
+  const allJobs = useMemo(() => [...MOCK_JOBS, ...getPostedJobs()], [])
+
   const [visibleJobs, setVisibleJobs] = useState(6)
   const [visibleNews, setVisibleNews] = useState(4)
   const [visiblePosts, setVisiblePosts] = useState(3)
 
   const handleShowMoreJobs = () => {
-    setVisibleJobs(prev => Math.min(prev + 6, MOCK_JOBS.length))
+    setVisibleJobs(prev => Math.min(prev + 6, allJobs.length))
   }
 
   const handleShowMoreNews = () => {
@@ -95,7 +99,7 @@ function Dashboard() {
     setVisiblePosts(prev => Math.min(prev + 3, MOCK_POSTS.length))
   }
 
-  const displayedJobs = MOCK_JOBS.slice(0, visibleJobs)
+  const displayedJobs = allJobs.slice(0, visibleJobs)
   const displayedNews = MOCK_NEWS.slice(0, visibleNews)
   const displayedPosts = MOCK_POSTS.slice(0, visiblePosts)
 
@@ -136,7 +140,7 @@ function Dashboard() {
           {/* Show More/Show Less buttons */}
           <Showmore
             visibleCount={visibleJobs}
-            totalCount={MOCK_JOBS.length}
+            totalCount={allJobs.length}
             initialCount={6}
             onShowMore={handleShowMoreJobs}
             onShowLess={() => setVisibleJobs(6)}

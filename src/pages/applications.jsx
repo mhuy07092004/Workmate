@@ -18,15 +18,17 @@ const savedJobs = [
     id: 1,
     title: 'Fresher Frontend Developer',
     company: 'TechCorp',
-    type: 'Full-time',
-    location: 'Sydeny,NSW',
+    employmentType: 'Full Time',
+    workArrangement: 'On Site',
+    location: 'Sydney, NSW',
     postedTime: 'Posted 2 days ago'
   },
   {
     id: 2,
     title: 'React Developer',
     company: 'StartupXYZ',
-    type: 'Full-time',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
     location: 'Remote',
     postedTime: 'Posted 1 week ago'
   },
@@ -34,8 +36,9 @@ const savedJobs = [
     id: 3,
     title: 'UI/UX Engineer',
     company: 'DesignHub',
-    type: 'Contract',
-    location: 'Melbourne,VIC',
+    employmentType: 'Contract',
+    workArrangement: 'Hybrid',
+    location: 'Melbourne, VIC',
     postedTime: 'Posted 3 days ago'
   }
 ]
@@ -46,15 +49,17 @@ const appliedJobs = [
     id: 4,
     title: 'Full Stack Developer',
     company: 'Innovation Labs',
-    type: 'Full-time',
-    location: 'Perth,WA',
+    employmentType: 'Full Time',
+    workArrangement: 'On Site',
+    location: 'Perth, WA',
     postedTime: 'Posted 1 day ago'
   },
   {
     id: 5,
     title: 'JavaScript Developer',
     company: 'WebSolutions',
-    type: 'Full-time',
+    employmentType: 'Full Time',
+    workArrangement: 'On Site',
     location: 'Sydney, NSW',
     postedTime: 'Posted 4 days ago'
   }

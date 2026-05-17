@@ -14,6 +14,7 @@ import Footer from '../components/Footer/Footer.jsx'
 import JobTitle from '../components/JobDesription/JobTitle.jsx'
 import JobDetails from '../components/JobDesription/JobDetails.jsx'
 import ApplyJob from '../components/Button/ApplyJob.jsx'
+import { getPostedJobById } from '../services/jobStore.js'
 
 // Mock data for job description
 const MOCK_JOB_DATA = {
@@ -63,9 +64,20 @@ We are committed to building a diverse and inclusive workplace where everyone ca
 function JobDescription() {
   const { id } = useParams()
 
-  // In a real app, fetch job data based on id
-  // For now, using mock data
-  const job = MOCK_JOB_DATA
+  // TODO (backend integration): fetch from GET /api/jobs/:id
+  // For now, check the employer-posted store first, then fall back to mock data.
+  const postedJob = getPostedJobById(id)
+  const job = postedJob
+    ? {
+        ...MOCK_JOB_DATA,
+        id: postedJob.id,
+        title: postedJob.title,
+        company: postedJob.company,
+        location: postedJob.location,
+        type: `${postedJob.employmentType} · ${postedJob.workArrangement}`,
+        salary: postedJob.salary || MOCK_JOB_DATA.salary,
+      }
+    : MOCK_JOB_DATA
 
   const handleApply = () => {
     // Backend DEV NOTE: Implement application submission
