@@ -15,10 +15,10 @@ The frontend is **fully mock** — all data comes from `src/data/user.json` and 
 | Employer | `employer@employer.com` | `1` |
 
 **Files to touch when integrating:**
-- `src/services/userService.js` — replace mock helpers with real fetch calls (start here)
-- `src/pages/login.jsx` — replace `MOCK_USERS` check with `POST /api/auth/login`
-- `src/pages/profile.jsx` — enable save (currently shows an alert), connect to API
-- `src/components/Navbar/Navbar.jsx` — swap `workmate_signed_in` flag for token check
+- `fe/src/services/userService.js` — replace mock helpers with real fetch calls (start here)
+- `fe/src/pages/login.jsx` — replace `MOCK_USERS` check with `POST /api/auth/login`
+- `fe/src/pages/profile.jsx` — enable save (currently shows an alert), connect to API
+- `fe/src/components/Navbar/Navbar.jsx` — swap `workmate_signed_in` flag for token check
 
 ---
 
@@ -194,25 +194,25 @@ interface Post {
 **Phase 1 — Auth (do first)**
 - [ ] `POST /api/auth/login` + `POST /api/auth/register` + `POST /api/auth/logout`
 - [ ] `GET /api/users/me`
-- [ ] Update `src/services/userService.js` — add `getToken()`, `setToken()`, `clearToken()`
-- [ ] Update `src/pages/login.jsx` — swap mock check for API call, store JWT, wire up "Remember me"
-- [ ] Update `src/components/Navbar/Navbar.jsx` — use token presence instead of `workmate_signed_in`
+- [ ] Update `fe/src/services/userService.js` — add `getToken()`, `setToken()`, `clearToken()`
+- [ ] Update `fe/src/pages/login.jsx` — swap mock check for API call, store JWT, wire up "Remember me"
+- [ ] Update `fe/src/components/Navbar/Navbar.jsx` — use token presence instead of `workmate_signed_in`
 
 **Phase 2 — Profile**
 - [ ] `PUT /api/users/me` + `POST /api/users/me/resume`
-- [ ] Enable save in `src/pages/profile.jsx` (remove the alert stub)
+- [ ] Enable save in `fe/src/pages/profile.jsx` (remove the alert stub)
 
 **Phase 3 — Jobs**
 - [ ] `GET /api/jobs` (with filters), `POST /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs/:id/apply`
-- [ ] Replace inline mock arrays in `dashboard.jsx`, `recommended_job.jsx`, `job_description.jsx`
+- [ ] Replace inline mock arrays in `fe/src/pages/dashboard.jsx`, `fe/src/pages/recommended_job.jsx`, `fe/src/pages/job_description.jsx`
 
 **Phase 4 — Applications**
 - [ ] Saved/applied/posted job endpoints + candidate saved endpoints
-- [ ] Replace mock arrays in `applications.jsx`
+- [ ] Replace mock arrays in `fe/src/pages/applications.jsx`
 
 **Phase 5 — Social & Notifications (low priority)**
 - [ ] Posts CRUD + notifications endpoints
-- [ ] Replace `SAMPLE_POSTS` in `post.jsx` and `MOCK_NOTIFICATIONS` in `Navbar.jsx`
+- [ ] Replace `SAMPLE_POSTS` in `fe/src/pages/post.jsx` and `MOCK_NOTIFICATIONS` in `fe/src/components/Navbar/Navbar.jsx`
 
 ---
 
@@ -222,4 +222,4 @@ interface Post {
 
 **Role-based UI broken** — Backend login response must include `role: "candidate" | "employer"` in the user object.
 
-**Where to find integration points** — Search the codebase for `BACKEND DEV NOTE` or `TODO (backend integration)`.
+**Where to find integration points** — Search the codebase for `BACKEND DEV NOTE` or `TODO (backend integration)` inside `fe/src/`.
