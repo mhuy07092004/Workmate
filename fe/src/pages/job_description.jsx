@@ -9,7 +9,7 @@
  *   - Uses route param :id for dynamic routing
  */
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import JobTitle from '../components/JobDesription/JobTitle.jsx'
@@ -157,12 +157,11 @@ function JobDescription() {
   const isOwnerView = getCurrentUserRole() === 'employer' && id === 'sample'
   const isCandidate = getCurrentUserRole() === 'candidate'
 
+  const navigate = useNavigate()
   const [showSavedToast, setShowSavedToast] = useState(false)
 
   const handleApply = () => {
-    // Backend DEV NOTE: Implement application submission
-    // POST /api/jobs/:id/apply
-    alert(`Applying for job ${id}: ${job.title}`)
+    navigate(`/job/${id}/application`)
   }
 
   const handleSaveJob = () => {
