@@ -8,12 +8,14 @@
  *   - Detailed job description sections
  *   - Uses route param :id for dynamic routing
  */
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import JobTitle from '../components/JobDesription/JobTitle.jsx'
 import JobDetails from '../components/JobDesription/JobDetails.jsx'
 import ApplyJob from '../components/Button/ApplyJob.jsx'
+import SaveJob from '../components/Button/SaveJob.jsx'
 import CandidateCard from '../components/CandidateCard/CandidateCard.jsx'
 import { getPostedJobById } from '../services/jobStore.js'
 import { getCurrentUserRole } from '../services/userService.js'
@@ -153,11 +155,20 @@ function JobDescription() {
       : MOCK_JOB_DATA
 
   const isOwnerView = getCurrentUserRole() === 'employer' && id === 'sample'
+  const isCandidate = getCurrentUserRole() === 'candidate'
+
+  const [showSavedToast, setShowSavedToast] = useState(false)
 
   const handleApply = () => {
     // Backend DEV NOTE: Implement application submission
     // POST /api/jobs/:id/apply
     alert(`Applying for job ${id}: ${job.title}`)
+  }
+
+  const handleSaveJob = () => {
+    // BACKEND DEV NOTE: POST /api/jobs/:id/save
+    setShowSavedToast(true)
+    setTimeout(() => setShowSavedToast(false), 3000)
   }
 
   return (
@@ -172,15 +183,18 @@ function JobDescription() {
           postedDate={job.postedDate}
         />
 
-        {/* Action row — employer owner sees meta only; candidates see Apply button */}
-        <div className="mt-6 flex items-center gap-4">
+        {/* Action row — employer owner sees meta only; candidates see Apply + Save buttons */}
+        <div className="mt-6 flex flex-wrap items-center gap-4">
           {!isOwnerView && <ApplyJob onClick={handleApply} />}
-          <div className="text-slate-600">
-            <span className="font-medium">{job.location}</span>
-            <span className="mx-2 text-slate-400">|</span>
-            <span>{job.type}</span>
-            <span className="mx-2 text-slate-400">|</span>
-            <span className="text-green-600 font-medium">{job.salary}</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="text-slate-600">
+              <span className="font-medium">{job.location}</span>
+              <span className="mx-2 text-slate-400">|</span>
+              <span>{job.type}</span>
+              <span className="mx-2 text-slate-400">|</span>
+              <span className="text-green-600 font-medium">{job.salary}</span>
+            </div>
+            {isCandidate && <SaveJob onClick={handleSaveJob} />}
           </div>
         </div>
 
@@ -204,6 +218,18 @@ function JobDescription() {
       </main>
 
       <Footer />
+
+      {/* Job saved toast — candidate UI only, no persistence */}
+      {showSavedToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-white px-5 py-3.5 shadow-[0_4px_24px_rgba(15,23,42,0.15)] border border-slate-100">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-600">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </span>
+          <span className="text-[0.95rem] font-semibold text-slate-800">Job saved</span>
+        </div>
+      )}
     </div>
   )
 }
