@@ -36,6 +36,29 @@ The app runs at `http://localhost:5173`.
 
 ---
 
+## Run Frontend with Docker
+
+Docker guarantees an identical environment on Windows, Mac, and Linux — no local Node/npm required.
+
+**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2)
+
+```bash
+# Development (HMR live-reload) — run from fe/
+cd fe
+docker compose --profile dev up --build
+# → http://localhost:5173
+
+# Production build served by nginx — run from fe/
+docker compose --profile prod up --build
+# → http://localhost:8080
+```
+
+- Pass `--build` on the first run and after any `package.json` change so dependencies are reinstalled inside the image.
+- The `node_modules` directory lives only inside the container; your host machine stays clean.
+- To run the linter inside the container: `docker compose --profile dev run --rm frontend-dev npm run lint`
+
+---
+
 ## Available Scripts (run from `fe/`)
 
 | Command | Description |

@@ -1,0 +1,32 @@
+services:
+  # ── Development ─────────────────────────────────────────────────────────────
+  # Run: docker compose --profile dev up --build
+  # App: http://localhost:5173  (Vite HMR enabled)
+  frontend-dev:
+    profiles: [dev]
+    build:
+      context: .
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      # Keep node_modules inside the container to avoid cross-OS binary conflicts
+      - node_modules:/app/node_modules
+    environment:
+      # Required for file-watch HMR on Windows/Docker Desktop (uses polling)
+      - CHOKIDAR_USEPOLLING=true
+
+  # ── Production ───────────────────────────────────────────────────────────────
+  # Run: docker compose --profile prod up --build
+  # App: http://localhost:8080
+  frontend:
+    profiles: [prod]
+    build:
+      context: .
+      target: production
+    ports:
+      - "8080:80"
+
+volumes:
+  node_modules:
