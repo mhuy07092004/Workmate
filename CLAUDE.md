@@ -1,6 +1,14 @@
 # Project Overview
 
-Workmate is a professional networking and AI-assisted job-matching web application built for a CSIT314 university project. It serves two user roles — **candidates** (job seekers) and **employers** — providing a LinkedIn-style interface for browsing jobs, posting listings, reviewing applicants, and following career news. The project is currently **frontend-only**: all data is sourced from inline mock arrays and `src/data/user.json`; `localStorage` stands in for a real auth backend until API integration is complete.
+Workmate is a professional networking and AI-assisted job-matching web application built for a CSIT314 university project. It serves two user roles — **candidates** (job seekers) and **employers** — providing a LinkedIn-style interface for browsing jobs, posting listings, reviewing applicants, and following career news. The project is currently **frontend-only**: all data is sourced from inline mock arrays and `fe/src/data/user.json`; `localStorage` stands in for a real auth backend until API integration is complete.
+
+## Repository Layout
+
+```
+Workmate/
+├── fe/   # Frontend — React + Vite (run `npm install && npm run dev` from here)
+└── be/   # Backend — API server (see be/README.md for spec)
+```
 
 ---
 
@@ -23,7 +31,7 @@ Workmate is a professional networking and AI-assisted job-matching web applicati
 
 ## Pages
 
-All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`src/App.jsx`](src/App.jsx).
+All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`fe/src/App.jsx`](fe/src/App.jsx).
 
 | File | Route | Description |
 |---|---|---|
@@ -46,7 +54,7 @@ All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`src/App.jsx`]
 
 ## Components
 
-Components live under `src/components/` in feature folders (`ComponentName/ComponentName.jsx`).
+Components live under `fe/src/components/` in feature folders (`ComponentName/ComponentName.jsx`).
 
 **Layout**
 
@@ -90,7 +98,7 @@ Components live under `src/components/` in feature folders (`ComponentName/Compo
 ## State & Data Flow
 
 - **Auth session:** Login sets three `localStorage` keys — `workmate_signed_in` (`'true'`), `workmate_current_user_email`, and `workmate_user_role` — via `setCurrentUserEmail()` and `setCurrentUserRole()` helpers in `userService.js`. Role is inferred from the matched user record (not from a form selector on sign-in). Navbar reads these keys on mount to decide which links and dropdown items to show; sign-out removes all three.
-- **User data:** `src/services/userService.js` exports helpers (`getCurrentUser`, `findUserByEmail`, `getCurrentUserRole`, etc.) that read from `localStorage` and look up records in `src/data/user.json`. Two demo accounts exist: `user@user.com` (candidate) and `employer@employer.com` (employer), both with password `1`.
+- **User data:** `fe/src/services/userService.js` exports helpers (`getCurrentUser`, `findUserByEmail`, `getCurrentUserRole`, etc.) that read from `localStorage` and look up records in `fe/src/data/user.json`. Two demo accounts exist: `user@user.com` (candidate) and `employer@employer.com` (employer), both with password `1`.
 - **Page-level state:** Every page manages its own UI state with `useState` — form fields, filter values, show-more toggles, file previews, validation errors. There is no shared global state store.
 - **Mock data:** Job listings, candidates, posts, and news items are defined as `const` arrays inline inside each page file. Comments throughout mark the exact places to replace with API calls (`// BACKEND DEV NOTE`, `// TODO (backend integration)`).
 - **Routing:** `BrowserRouter` in `main.jsx` wraps the entire app; `App.jsx` defines all routes with `React.lazy` + `<Suspense>`. Unknown paths fall through to `<Navigate to="/" replace />`.
@@ -109,7 +117,7 @@ Not implemented in this repo — to be updated when an API is added.
 - **Component folders:** Each component lives in its own folder matching its name (`Button/ApplyJob.jsx`, `JobCard/JobCard.jsx`). Config files are isolated under `config/` (Vite, Tailwind, ESLint).
 - **Explicit `.jsx` extensions:** Import paths always include `.jsx` (e.g. `import Navbar from '../components/Navbar/Navbar.jsx'`).
 - **Inline mock data:** Mock arrays are named in `SCREAMING_SNAKE_CASE` (e.g. `MOCK_JOBS`, `AI_CHOSEN_JOBS`) and placed at the top of each page file, ready to be swapped for API calls.
-- **Backend handoff markers:** All future API integration points are flagged with `// BACKEND DEV NOTE` or `// TODO (backend integration)` comments; running `grep "BACKEND DEV"` surfaces every handoff point.
+- **Backend handoff markers:** All future API integration points are flagged with `// BACKEND DEV NOTE` or `// TODO (backend integration)` comments; running `grep "BACKEND DEV" fe/src` surfaces every handoff point.
 - **Tailwind + scoped CSS:** Most styling uses Tailwind utility classes directly in JSX. A small number of pages have a companion `.css` file for complex animations or layout that is hard to express in utilities (e.g. `landing.css`, `placeholder.css`).
 - **Role-aware UI:** Components like `Navbar` and `applications.jsx` branch on the `workmate_user_role` value from `localStorage` to show different links, labels, and data depending on whether the user is a candidate or employer.
 

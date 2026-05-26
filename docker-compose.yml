@@ -1,0 +1,49 @@
+services:
+
+  # ── Frontend: Development ─────────────────────────────────────────────────
+  # Run: docker compose --profile dev up --build
+  # App: http://localhost:5173  (Vite HMR enabled)
+  frontend-dev:
+    profiles: [dev]
+    build:
+      context: ./frontend
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # node_modules lives only inside the container — avoids cross-OS binary conflicts
+      - fe_node_modules:/app/node_modules
+    environment:
+      # Required for file-watch HMR on Windows/Docker Desktop (uses polling)
+      - CHOKIDAR_USEPOLLING=true
+
+  # ── Frontend: Production ──────────────────────────────────────────────────
+  # Run: docker compose --profile prod up --build
+  # App: http://localhost:8080
+  frontend:
+    profiles: [prod]
+    build:
+      context: ./frontend
+      target: production
+    ports:
+      - "8080:80"
+
+  # ── Backend (add when ready) ──────────────────────────────────────────────
+  # backend:
+  #   profiles: [dev, prod]
+  #   build:
+  #     context: ./be
+  #   ports:
+  #     - "3000:3000"
+
+  # ── AI Model (add when ready) ─────────────────────────────────────────────
+  # model:
+  #   profiles: [dev, prod]
+  #   build:
+  #     context: ./model
+  #   ports:
+  #     - "8000:8000"
+
+volumes:
+  fe_node_modules:

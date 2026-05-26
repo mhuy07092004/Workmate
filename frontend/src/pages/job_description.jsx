@@ -9,7 +9,7 @@
  *   - Uses route param :id for dynamic routing
  */
 
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
 import Navbar from '../components/Navbar/Navbar.jsx'
@@ -17,9 +17,10 @@ import Footer from '../components/Footer/Footer.jsx'
 import JobTitle from '../components/JobDesription/JobTitle.jsx'
 import JobDetails from '../components/JobDesription/JobDetails.jsx'
 import ApplyJob from '../components/Button/ApplyJob.jsx'
+import SaveJob from '../components/Button/SaveJob.jsx'
 import CandidateCard from '../components/CandidateCard/CandidateCard.jsx'
 
-import { getPostedJobById, normalizeApiJob } from '../services/jobStore.js'
+import { normalizeApiJob } from '../services/jobStore.js'
 import { getCurrentUserRole, getCurrentUserId } from '../services/userService.js'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -107,21 +108,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 function JobDescription() {
   const { id } = useParams()
+  const navigate = useNavigate()
 
   const [apiJob, setApiJob] = useState(null)
   const [loadingJob, setLoadingJob] = useState(false)
   const [jobError, setJobError] = useState('')
   const [applicants, setApplicants] = useState([])
 
-  const [isApplying, setIsApplying] = useState(false)
-  const [applyError, setApplyError] = useState('')
+  const [savingJob, setSavingJob] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
-  // Load API job
+  // Load job from API
   useEffect(() => {
-    if (id === 'sample') return
-
     const loadJob = async () => {
-      console.log(1)
       try {
         setLoadingJob(true)
         setJobError('')
@@ -135,7 +134,6 @@ function JobDescription() {
 
         setApiJob(normalizeApiJob(data.job))
       } catch (err) {
-        console.error(err)
         setJobError(err.message)
       } finally {
         setLoadingJob(false)
@@ -145,47 +143,7 @@ function JobDescription() {
     loadJob()
   }, [id])
 
-  // Local posted jobs
-  const postedJob = getPostedJobById(id)
-
-  function buildPostedJobExtras(pj) {
-    const lines = []
-
-    if (!pj) return ''
-
-    if (pj.industry) lines.push(`Industry: ${pj.industry}`)
-    if (pj.roleLevel) lines.push(`Role Level: ${pj.roleLevel}`)
-    if (pj.majorField || pj.major) {
-      lines.push(`Major / Field of Study: ${pj.majorField || pj.major}`)
-    }
-
-    if (pj.certification) {
-      lines.push(`Required Certification: ${pj.certification}`)
-    }
-
-    if (pj.preferredLanguages?.length > 0) {
-      lines.push(`Preferred Languages: ${pj.preferredLanguages.join(', ')}`)
-    }
-
-    if (pj.availability?.mode) {
-      const avail = pj.availability.date
-        ? `${pj.availability.mode} (${pj.availability.date})`
-        : pj.availability.mode
-
-      lines.push(`Start Availability: ${avail}`)
-    }
-
-    return lines.length > 0
-      ? '\n\nAdditional Requirements:\n• ' + lines.join('\n• ')
-      : ''
-  }
-
-  // Resolve final job
-  let job = null;
-
-  if (apiJob) {
-    job = apiJob;
-  }
+  const job = apiJob
 
   useEffect(() => {
     const loadApplicants = async () => {
@@ -217,51 +175,46 @@ function JobDescription() {
   const isOwnerView =
     getCurrentUserRole() === 'employer' && apiJob && apiJob.user_id === parseInt(getCurrentUserId())
 
-  // Apply handler
-  const handleApply = async () => {
+  const isCandidate = getCurrentUserRole() === 'candidate'
+
+  // Navigate to the apply form
+  const handleApply = () => {
+    navigate(`/job/${id}/application`)
+  }
+
+  // Save the job for the current candidate
+  const handleSave = async () => {
     try {
-      setIsApplying(true)
-      setApplyError('')
+      setSavingJob(true)
+      setSaveMessage('')
 
       const userId = getCurrentUserId()
-
       if (!userId) {
-        alert('Please log in to apply for jobs')
+        setSaveMessage('Please log in to save jobs')
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/applications/`, {
+      const response = await fetch(`${API_BASE_URL}/saved/`, {
         method: 'POST',
-
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('workmate_token')}`,
         },
-
         body: JSON.stringify({
-          user_id: parseInt(userId),
-          job_id: parseInt(job.id),
-          status: 'applied',
+          user_id: parseInt(userId, 10),
+          job_id: parseInt(job.id, 10),
         }),
       })
 
       const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(
-          data.detail || data.error || 'Failed to apply for job'
-        )
+        throw new Error(data.detail || data.error || 'Failed to save job')
       }
-
-      alert('Successfully applied for the job!')
-    } catch (error) {
-      console.error('Apply error:', error)
-
-      setApplyError(error.message)
-
-      alert(`Error applying for job: ${error.message}`)
+      setSaveMessage('Job saved to your list.')
+    } catch (err) {
+      setSaveMessage(err.message)
     } finally {
-      setIsApplying(false)
+      setSavingJob(false)
     }
   }
 
@@ -305,11 +258,11 @@ function JobDescription() {
 
         {/* Action row */}
         <div className="mt-6 flex items-center gap-4 flex-wrap">
-          {!isOwnerView && (
-            <ApplyJob
-              onClick={handleApply}
-              disabled={isApplying}
-            />
+          {isCandidate && !isOwnerView && (
+            <>
+              <ApplyJob onClick={handleApply} />
+              <SaveJob onClick={handleSave} disabled={savingJob} />
+            </>
           )}
 
           <div className="text-slate-600">
@@ -327,11 +280,8 @@ function JobDescription() {
           </div>
         </div>
 
-        {/* Apply error */}
-        {applyError && (
-          <div className="mt-4 text-red-500">
-            {applyError}
-          </div>
+        {saveMessage && (
+          <div className="mt-4 text-sm text-slate-700">{saveMessage}</div>
         )}
 
         {/* Employer applicant section */}

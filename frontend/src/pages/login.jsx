@@ -8,39 +8,17 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import userData from '../data/user.json'
-import { setCurrentUserEmail, setCurrentUserRole } from '../services/userService.js'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 const TOKEN_KEY = 'workmate_token'
 const USER_EMAIL_KEY = 'workmate_current_user_email'
 const USER_ROLE_KEY = 'workmate_user_role'
 const USER_ID_KEY = 'workmate_user_id'
-/**
- * Mock users loaded from user.json.
- *
- * BACKEND DEV NOTE:
- * - Sign-in now checks email + password only.
- * - Role is inferred from the matched user record and persisted for role-based redirect/UI.
- * - Current role values in mock data are expected to be "candidate" | "employer".
- * - Replace this local lookup with POST /api/auth/login and use the returned user.role.
- * REMOVE THIS before going to production
- */
-// const MOCK_USERS = userData.users
 
-/** Human-readable labels for each role, used in success/error messages. */
 const ROLE_LABELS = {
   candidate: 'Candidate',
   employer: 'Employer',
-}
-
-/**
- * Normalises a raw role string to either 'employer' or 'candidate'.
- * Treats any string starting with "emp" (case-insensitive) as 'employer'.
- */
-function normalizeRole(role) {
-  return role.trim().toLowerCase().startsWith('emp') ? 'employer' : 'candidate'
 }
 
 /**
@@ -72,7 +50,6 @@ async function apiCall(endpoint, method, body) {
   })
 
   const data = await response.json()
-  console.log(data);
 
   if (!response.ok) {
     throw new Error(data.detail || data.error || 'API Error')

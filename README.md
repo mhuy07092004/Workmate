@@ -7,16 +7,27 @@ A job-matching platform connecting candidates with employers through intelligent
 
 ---
 
+## Repository Structure
+
+```
+Workmate/
+├── fe/          # Frontend — React + Vite application
+└── be/          # Backend — API server (see be/README.md)
+```
+
+---
+
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) 18+ 
+- [Node.js](https://nodejs.org) 18+
 - npm 9+ (bundled with Node.js)
 
 ---
 
-## Run Locally
+## Run Frontend Locally
 
 ```bash
+cd fe
 npm install
 npm run dev
 ```
@@ -25,7 +36,31 @@ The app runs at `http://localhost:5173`.
 
 ---
 
-## Available Scripts
+## Run with Docker
+
+Docker guarantees an identical environment on Windows, Mac, and Linux — no local Node/npm required.
+
+**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2)
+
+All commands are run from the **repo root** (`Workmate/`). The single `docker-compose.yml` at the root is designed to grow with the project — `be` and `model` services can be added as new sections without touching the frontend config.
+
+```bash
+# Development (Vite HMR) — run from Workmate/
+docker compose --profile dev up --build
+# → http://localhost:5173
+
+# Production build served by nginx — run from Workmate/
+docker compose --profile prod up --build
+# → http://localhost:8080
+```
+
+- Pass `--build` on the first run and whenever `fe/package.json` changes.
+- `node_modules` lives only inside the container; the host machine stays clean.
+- Linter inside container: `docker compose --profile dev run --rm frontend-dev npm run lint`
+
+---
+
+## Available Scripts (run from `fe/`)
 
 | Command | Description |
 |---------|-------------|
@@ -83,10 +118,10 @@ The app runs at `http://localhost:5173`.
 - **Applicant Management**: View applicants and save promising candidates
 - **Company Profile**: Manage company information and branding
 
-### Component Architecture
+### Frontend Component Architecture
 
 ```
-src/
+fe/src/
 ├── pages/              # Page components (route-level)
 │   ├── login.jsx       # Authentication landing page
 │   ├── dashboard.jsx   # Main dashboard with recommendations
@@ -138,7 +173,7 @@ src/
 
 ## Backend Integration
 
-The frontend currently uses **mock authentication** with localStorage and static JSON data. See `backend_readme.md` for:
+The frontend currently uses **mock authentication** with localStorage and static JSON data. See `be/README.md` for:
 - Required API endpoints specification
 - Complete data models
 - Authentication flow (JWT-based)
@@ -156,8 +191,7 @@ The frontend currently uses **mock authentication** with localStorage and static
 - `workmate_token` - JWT token for authenticated requests
 
 **Files to Modify When Adding Backend:**
-1. `src/services/userService.js` - Replace mock functions with API calls
-2. `src/pages/login.jsx` - Replace hardcoded credential check with API login
-3. `src/pages/profile.jsx` - Connect save profile to API endpoint
-4. `src/components/Navbar/Navbar.jsx` - Update auth state check
-
+1. `fe/src/services/userService.js` - Replace mock functions with API calls
+2. `fe/src/pages/login.jsx` - Replace hardcoded credential check with API login
+3. `fe/src/pages/profile.jsx` - Connect save profile to API endpoint
+4. `fe/src/components/Navbar/Navbar.jsx` - Update auth state check
