@@ -6,15 +6,27 @@
  *   - disabled: boolean — Whether button is disabled
  */
 
-function SaveJob({ onClick, disabled = false }) {
+/**
+ * SaveJob.jsx — Save job button component
+ *
+ * Props:
+ *   - onClick: function — Callback when button is clicked
+ *   - disabled: boolean — Whether button is disabled
+ *   - isSaved: boolean — Whether the job is already saved
+ */
+
+function SaveJob({ onClick, disabled = false, isSaved = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="cursor-pointer rounded-full border-0 bg-green-600 px-8 py-3 text-[1rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-green-500 hover:shadow-[0_4px_14px_rgba(22,163,74,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 disabled:hover:shadow-none"
+      className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition-all ${isSaved
+          ? 'bg-slate-900 text-white hover:bg-slate-800'
+          : 'bg-green-600 text-white hover:bg-green-500'
+        } disabled:cursor-not-allowed disabled:opacity-60`}
     >
-      Save Job
+      {isSaved ? 'Saved' : 'Save Job'}
     </button>
   )
 }

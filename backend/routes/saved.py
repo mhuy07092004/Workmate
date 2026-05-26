@@ -51,3 +51,19 @@ def delete_saved_item(saved_id: int, db = Depends(get_db), current_user = Depend
     if status != 200:
         raise HTTPException(status_code=status, detail=result.get("error"))
     return result
+
+@router.get("/check/{user_id}/{job_id}")
+def check_if_saved(user_id: int, job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+    """Check if a job is saved by current user"""
+    service = SavedService(db)
+    result, status = service.is_job_saved(user_id, job_id)
+    return result
+
+@router.post("/job/{user_id}/{job_id}")
+def toggle_save_job(user_id: int, job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+    """Toggle save/unsave a job"""
+    service = SavedService(db)
+    result, status = service.toggle_save_job(user_id, job_id)
+    if status not in [200, 201]:
+        raise HTTPException(status_code=status, detail=result.get("error"))
+    return result

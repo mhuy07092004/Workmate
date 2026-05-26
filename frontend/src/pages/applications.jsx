@@ -22,35 +22,35 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Sample data for saved jobs
-const savedJobs = [
-  {
-    id: 1,
-    title: 'Fresher Frontend Developer',
-    company: 'TechCorp',
-    employmentType: 'Full Time',
-    workArrangement: 'On Site',
-    location: 'Sydney, NSW',
-    postedTime: 'Posted 2 days ago'
-  },
-  {
-    id: 2,
-    title: 'React Developer',
-    company: 'StartupXYZ',
-    employmentType: 'Full Time',
-    workArrangement: 'Remote',
-    location: 'Remote',
-    postedTime: 'Posted 1 week ago'
-  },
-  {
-    id: 3,
-    title: 'UI/UX Engineer',
-    company: 'DesignHub',
-    employmentType: 'Contract',
-    workArrangement: 'Hybrid',
-    location: 'Melbourne, VIC',
-    postedTime: 'Posted 3 days ago'
-  }
-]
+// const savedJobs = [
+//   {
+//     id: 1,
+//     title: 'Fresher Frontend Developer',
+//     company: 'TechCorp',
+//     employmentType: 'Full Time',
+//     workArrangement: 'On Site',
+//     location: 'Sydney, NSW',
+//     postedTime: 'Posted 2 days ago'
+//   },
+//   {
+//     id: 2,
+//     title: 'React Developer',
+//     company: 'StartupXYZ',
+//     employmentType: 'Full Time',
+//     workArrangement: 'Remote',
+//     location: 'Remote',
+//     postedTime: 'Posted 1 week ago'
+//   },
+//   {
+//     id: 3,
+//     title: 'UI/UX Engineer',
+//     company: 'DesignHub',
+//     employmentType: 'Contract',
+//     workArrangement: 'Hybrid',
+//     location: 'Melbourne, VIC',
+//     postedTime: 'Posted 3 days ago'
+//   }
+// ]
 
 // Sample saved candidates
 const savedCandidates = [
@@ -92,9 +92,14 @@ function Applications() {
   const [isLoadingPosted, setIsLoadingPosted] = useState(false)
   const [postedError, setPostedError] = useState('')
 
+  const [savedJobs, setSavedJobs] = useState([])
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false)
+  const [savedError, setSavedError] = useState('')
+
   // Fetch candidate applications
   useEffect(() => {
     if (!isEmployer && userId) {
+      fetchSavedJobs()
       fetchAppliedJobs()
     }
   }, [userId, isEmployer])
@@ -124,6 +129,66 @@ function Applications() {
     if (daysAgo < 365) return `${Math.floor(daysAgo / 30)} months ago`
 
     return `${Math.floor(daysAgo / 365)} years ago`
+  }
+
+  const fetchSavedJobs = async () => {
+    try {
+      setIsLoadingSaved(true)
+      setSavedError('')
+
+      const token = localStorage.getItem('workmate_token')
+      const response = await fetch(`${API_BASE_URL}/saved/user/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch saved jobs')
+      }
+
+      const data = await response.json()
+      const savedItems = data.saved_items || []
+
+      const jobs = await Promise.all(
+        savedItems.map(async (item) => {
+          try {
+            const jobResponse = await fetch(`${API_BASE_URL}/jobs/${item.job_id}`, {
+              headers: { 'Content-Type': 'application/json' },
+            })
+            if (!jobResponse.ok) return null
+
+            const jobData = await jobResponse.json()
+            const job = jobData.job || jobData
+
+            return {
+              id: job.id,
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              employmentType: job.job_type,
+              workArrangement: job.job_type,
+              postedTime: `Posted ${calculateDaysAgo(job.created_at)}`,
+              salary:
+                job.salary_min && job.salary_max
+                  ? `$${job.salary_min} - $${job.salary_max}`
+                  : 'Not specified',
+            }
+          } catch (err) {
+            console.error(`Failed to fetch job ${item.job_id}:`, err)
+            return null
+          }
+        })
+      )
+
+      setSavedJobs(jobs.filter(Boolean))
+    } catch (error) {
+      console.error('Error fetching saved jobs:', error)
+      setSavedError(error.message || 'Failed to load saved jobs')
+    } finally {
+      setIsLoadingSaved(false)
+    }
   }
 
   // Fetch candidate applied jobs
