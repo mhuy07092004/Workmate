@@ -1,6 +1,7 @@
 from repositories.job_repository import JobRepository
 from fastapi import HTTPException
 from utils.embeddings import generate_embedding
+from fuzzywuzzy import fuzz
 
 class JobService:
     def __init__(self, db):
@@ -41,4 +42,13 @@ class JobService:
     
     def search_jobs(self, filters: dict):
         jobs = self.job_repo.search(filters)
+
+        # Handle fuzzy search for job title
+        if filters.get("title"):
+            search_title = filters["title"]
+            jobs = [
+                job for job in jobs 
+                if fuzz.token_set_ratio(search_title.lower(), job.title.lower()) >= 70
+            ]
+
         return {"jobs": jobs}, 200
