@@ -51,8 +51,8 @@ class JobRepository:
         
         if filters.get("location"):
             query = query.where(Job.location.ilike(f"%{filters['location']}%"))
-        if filters.get("title"):
-            query = query.where(Job.title.ilike(f"%{filters['title']}%"))
+        # if filters.get("title"):
+        #     query = query.where(Job.title.ilike(f"%{filters['title']}%"))
         if filters.get("company"):
             query = query.where(Job.company.ilike(f"%{filters['company']}%"))
         if filters.get("job_type"):
