@@ -6,12 +6,12 @@ services:
   frontend-dev:
     profiles: [dev]
     build:
-      context: ./fe
+      context: ./frontend
       target: dev
     ports:
       - "5173:5173"
     volumes:
-      - ./fe:/app
+      - ./frontend:/app
       # node_modules lives only inside the container — avoids cross-OS binary conflicts
       - fe_node_modules:/app/node_modules
     environment:
@@ -24,7 +24,7 @@ services:
   frontend:
     profiles: [prod]
     build:
-      context: ./fe
+      context: ./frontend
       target: production
     ports:
       - "8080:80"
