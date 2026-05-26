@@ -27,6 +27,12 @@ import {
   appendPostedJob,
 } from '../services/jobStore.js'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+function getAuthToken() {
+  return localStorage.getItem('workmate_token')
+}
+
 function PostJob() {
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -154,7 +160,7 @@ function PostJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     const newErrors = validateForm()
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -164,10 +170,36 @@ function PostJob() {
     setIsSubmitting(true)
 
     try {
-      // TODO (backend integration): Replace with POST /api/jobs
-      const job = normalizePostedJob(formData)
-      appendPostedJob(job)
+      const salaryNumbers = (formData.salary || '').match(/\d+/g)?.map(Number) || []
+      const salary_min = salaryNumbers[0] || 0
+      const salary_max = salaryNumbers[1] || salaryNumbers[0] || 0
 
+      const payload = {
+        title: formData.jobTitle.trim(),
+        company: formData.companyName.trim(),
+        job_type: formData.employmentType,
+        location: formData.jobLocation.trim(),
+        description: formData.jobDescription.trim(),
+        requirements: formData.requiredSkills.trim(),
+        salary_min,
+        salary_max,
+      }
+
+      const response = await fetch(`${API_BASE_URL}/jobs/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.detail || result.error || 'Failed to post job')
+      }
+
+      setSuccessMessage(`"${result.job.title}" has been posted successfully!`)
       setFormData({
         jobTitle: '',
         companyName: '',
@@ -188,10 +220,10 @@ function PostJob() {
         availabilityMode: '',
         availabilityDate: '',
       })
-      setSuccessMessage(`"${job.title}" has been posted successfully!`)
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
       console.error('Error posting job:', error)
+      setSuccessMessage('Failed to post job. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

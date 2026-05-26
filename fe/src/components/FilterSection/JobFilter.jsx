@@ -14,6 +14,8 @@
 import { EMPLOYMENT_TYPES, WORK_ARRANGEMENTS } from '../../services/jobStore.js'
 
 const FILTER_OPTIONS = {
+
+  // "Full-time", "Contract", "Remote", "Hybrid"
   location: ['Sydney, NSW', 'Melbourne, VIC', 'Brisbane, QLD', 'Perth, WA', 'Adelaide, SA', 'Remote'],
   salaryRange: ['$50k - $70k', '$70k - $100k', '$100k - $150k', '$150k - $200k', '$200k+'],
   jobCategory: ['Software Engineering', 'Data Science', 'Product Management', 'UX/UI Design', 'DevOps', 'QA/Testing'],

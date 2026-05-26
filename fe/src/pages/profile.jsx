@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import ProfilePictureCard from '../components/ProfilePictureCard/ProfilePictureCard.jsx'
-import { getCurrentUserEmail, getCurrentUserRole, findUserByEmail } from '../services/userService.js'
 
 const MAX_EXPERIENCE_ENTRIES = 10
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function newExperienceEntry() {
   return {
@@ -17,7 +17,43 @@ function newExperienceEntry() {
   }
 }
 
+// workmate_user_id
+
+function getCurrentUserEmail() {
+  return localStorage.getItem('workmate_current_user_email')
+}
+
+function getCurrentUserID() {
+  return localStorage.getItem('workmate_user_id')
+}
+
+function getCurrentUserRole() {
+  return localStorage.getItem('workmate_user_role')
+}
+
+function getAuthToken() {
+  return localStorage.getItem('workmate_token')
+}
+
+async function fetchFromAPI(endpoint, method = 'GET', body = null) {
+  const token = getAuthToken()
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || 'API Error')
+  }
+  return data
+}
+
 // ── Candidate Profile ────────────────────────────────────────────────────────
+
 
 function CandidateProfile() {
   const [formData, setFormData] = useState({
@@ -37,6 +73,9 @@ function CandidateProfile() {
   const [errors, setErrors] = useState({})
   const [experienceErrors, setExperienceErrors] = useState([])
   const [profilePictureError, setProfilePictureError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)  
+  const [resumeUrl, setResumeUrl] = useState(null)
+  
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -150,56 +189,202 @@ function CandidateProfile() {
     return Object.keys(newErrors).length === 0 && expValid
   }
 
-  const handleSubmit = (e) => {
+  // const handleSubmit = (e) => {
+  //   e.preventDefault()
+  //   if (validateForm()) {
+  //     alert('Profile save feature requires backend integration. Changes will not be persisted.')
+  //   }
+  // }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validateForm()) {
-      alert('Profile save feature requires backend integration. Changes will not be persisted.')
-    }
-  }
 
-  const loadUserData = () => {
-    const email = getCurrentUserEmail()
-    if (email) {
-      const user = findUserByEmail(email)
-      if (user) {
-        setFormData({
-          fullName: user.fullName || '',
-          email: user.emailAddress || user.email || '',
-          phoneNumber: user.phoneNumber || '',
-          educationLevel: user.educationLevel || '',
-          major: user.major || '',
-          school: user.school || '',
-          aboutYou: user.about || '',
-          resumeFile: null,
-          profilePictureFile: null,
+    if (!validateForm()) return
+
+    try {
+      setIsLoading(true)
+
+      // Upload files first if they exist
+      let resume_url = null
+      let profile_picture_url = null
+
+      if (formData.resumeFile || formData.profilePictureFile) {
+        const formDataUpload = new FormData()
+        if (formData.resumeFile) formDataUpload.append('resume', formData.resumeFile)
+        if (formData.profilePictureFile) formDataUpload.append('profile_picture', formData.profilePictureFile)
+
+        const uploadResponse = await fetch(`${API_BASE_URL}/profiles/upload/${getCurrentUserID()}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` },
+          body: formDataUpload
         })
-
-        if (Array.isArray(user.experiences) && user.experiences.length > 0) {
-          setExperiences(user.experiences.map(exp => ({
-            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-            position: exp.position || '',
-            companyName: exp.companyName || '',
-            fromDate: exp.from || '',
-            untilDate: exp.until === 'present' ? '' : exp.until || '',
-            isCurrentlyWorking: exp.until === 'present',
-          })))
-        } else {
-          setExperiences([{
-            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-            position: user.position || '',
-            companyName: user.companyName || '',
-            fromDate: user.from || '',
-            untilDate: user.until === 'present' ? '' : user.until || '',
-            isCurrentlyWorking: user.until === 'present',
-          }])
-        }
-
-        setExperienceErrors([])
-        setProfilePictureError('')
+        const uploadedUrls = await uploadResponse.json()
+        resume_url = uploadedUrls.resume_url
+        profile_picture_url = uploadedUrls.profile_picture_url
       }
+
+      const userData = {
+        user_id: getCurrentUserID(),
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        education_level: formData.educationLevel,
+        major: formData.major,
+        school: formData.school,
+        about_you: formData.aboutYou,
+        experiences: experiences.map(exp => ({
+          position: exp.position,
+          company_name: exp.companyName,
+          from_date: exp.fromDate,
+          until_date: exp.untilDate,
+          is_currently_working: exp.isCurrentlyWorking,
+        })),
+      }
+
+      // Only include file URLs if they were actually uploaded
+      // This prevents overwriting existing files with null values
+      if (resume_url !== null) {
+        userData.resume_url = resume_url
+      }
+      if (profile_picture_url !== null) {
+        userData.profile_picture_url = profile_picture_url
+      }
+
+      const id = getCurrentUserID()
+
+      // check if profile exists
+      let profileExists = false
+
+      try {
+        await fetchFromAPI(`/profiles/${id}`)
+        profileExists = true
+      } catch (err) {
+        if (err.message.includes('Profile not found.')) {
+          profileExists = false
+        } else {
+          throw err
+        }
+      }
+
+      // create or update
+      if (profileExists) {
+        await fetchFromAPI(`/profiles/${id}`, 'PUT', userData)
+        alert('Profile updated successfully!')
+      } else {
+        await fetchFromAPI('/profiles/', 'POST', userData)
+        alert('Profile created successfully!')
+      }
+
+    } catch (err) {
+      alert(`Error saving profile: ${err.message}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  // const loadUserData = () => {
+  //   const email = getCurrentUserEmail()
+  //   if (email) {
+  //     const user = findUserByEmail(email)
+  //     if (user) {
+  //       setFormData({
+  //         fullName: user.fullName || '',
+  //         email: user.emailAddress || user.email || '',
+  //         phoneNumber: user.phoneNumber || '',
+  //         educationLevel: user.educationLevel || '',
+  //         major: user.major || '',
+  //         school: user.school || '',
+  //         aboutYou: user.about || '',
+  //         resumeFile: null,
+  //         profilePictureFile: null,
+  //       })
+
+  //       if (Array.isArray(user.experiences) && user.experiences.length > 0) {
+  //         setExperiences(user.experiences.map(exp => ({
+  //           id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+  //           position: exp.position || '',
+  //           companyName: exp.companyName || '',
+  //           fromDate: exp.from || '',
+  //           untilDate: exp.until === 'present' ? '' : exp.until || '',
+  //           isCurrentlyWorking: exp.until === 'present',
+  //         })))
+  //       } else {
+  //         setExperiences([{
+  //           id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+  //           position: user.position || '',
+  //           companyName: user.companyName || '',
+  //           fromDate: user.from || '',
+  //           untilDate: user.until === 'present' ? '' : user.until || '',
+  //           isCurrentlyWorking: user.until === 'present',
+  //         }])
+  //       }
+
+  //       setExperienceErrors([])
+  //       setProfilePictureError('')
+  //     }
+  //   }
+  // }
+
+  const loadUserData = async () => {
+    try {
+      const id = getCurrentUserID()
+
+      if (!id) {
+        console.error('No user ID found')
+        return
+      }
+
+      const response = await fetchFromAPI(`/profiles/${id}`)
+
+      const profile = response?.profile
+
+      // handle "no profile yet"
+      if (!profile) {
+        console.log('No existing profile — user will create one')
+        return
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        fullName: profile.full_name ?? '',
+        email: profile.email ?? '',
+        phoneNumber: profile.phone ?? '',
+        educationLevel: profile.education_level ?? '',
+        major: profile.major ?? '',
+        school: profile.school ?? '',
+        aboutYou: profile.about_you ?? '',
+        profilePictureFile: null,
+        resumeFile: null,
+      }))
+
+      // Display saved profile picture
+      setProfilePicturePreviewUrl(profile.profile_picture_url ? `${API_BASE_URL}/${profile.profile_picture_url}` : null)
+
+      // Display saved resume
+      setResumeUrl(profile.resume_url ? `${API_BASE_URL}/${profile.resume_url}` : null)
+
+      setExperiences(
+        Array.isArray(profile.experiences)
+          ? profile.experiences.map(exp => ({
+            id: exp.id ?? crypto.randomUUID(),
+            position: exp.position ?? '',
+            companyName: exp.company_name ?? '',
+            fromDate: exp.from_date ?? '',
+            untilDate: exp.until_date ?? '',
+            isCurrentlyWorking: exp.is_currently_working ?? false,
+          }))
+          : [newExperienceEntry()]
+      )
+    } catch (err) {
+      // THIS is where 404 is handled
+      if (err.message.includes('404') || err.message.includes('Profile not found')) {
+        console.log('No profile exists yet — form stays empty')
+        return
+      }
+
+      console.error('Error loading profile:', err.message)
+    }
+  }
   useEffect(() => { loadUserData() }, [])
 
   const getWordCount = () =>
@@ -424,6 +609,18 @@ function CandidateProfile() {
           </div>
           <div className="text-xs text-gray-500">PDF files only (MAX. 10MB)</div>
         </div>
+        {resumeUrl && (
+          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-md mt-3">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline font-medium">
+                View Saved Resume
+              </a>
+            </div>
+          </div>
+        )}
         {formData.resumeFile && (
           <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-md mt-3">
             <div className="flex items-center gap-3">
@@ -444,8 +641,8 @@ function CandidateProfile() {
         <button type="button" onClick={loadUserData} className="px-5 py-2.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 font-medium transition-colors">
           Cancel
         </button>
-        <button type="submit" className="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium transition-colors">
-          Save Profile
+        <button type="submit" disabled={isLoading} className="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium transition-colors">
+          {isLoading ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </form>
@@ -472,6 +669,7 @@ function EmployerProfile() {
   const [profilePicturePreviewUrl, setProfilePicturePreviewUrl] = useState(null)
   const [errors, setErrors] = useState({})
   const [profilePictureError, setProfilePictureError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)  
 
   useEffect(() => {
     let url = null
@@ -530,33 +728,75 @@ function EmployerProfile() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validateForm()) {
-      alert('Profile save feature requires backend integration. Changes will not be persisted.')
+    if (!validateForm()) return
+
+    try {
+      setIsLoading(true)
+      const userData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        job_title: formData.jobTitle,
+        company_name: formData.companyName,
+        industry: formData.industry,
+        company_size: formData.companySize,
+        company_website: formData.companyWebsite,
+        company_location: formData.companyLocation,
+        about_company: formData.aboutCompany,
+      }
+
+      const id = getCurrentUserID()
+      let profileExists = false
+
+      try {
+        await fetchFromAPI(`/employer_profiles/${id}`)
+        profileExists = true
+      } catch (error) {
+        profileExists = false
+      }
+
+      if (profileExists) {
+        await fetchFromAPI(`/employer_profiles/${id}`, 'PUT', userData)
+      } else {
+        await fetchFromAPI('/employer_profiles/', 'POST', { user_id: parseInt(id, 10), ...userData })
+      }
+
+      alert('Company profile updated successfully!')
+      setIsLoading(false)
+    } catch (err) {
+      alert(`Error saving profile: ${err.message}`)
+      setIsLoading(false)
     }
   }
 
-  const loadUserData = () => {
-    const email = getCurrentUserEmail()
-    if (email) {
-      const user = findUserByEmail(email)
-      if (user) {
-        setFormData({
-          fullName: user.fullName || '',
-          email: user.emailAddress || user.email || '',
-          phoneNumber: user.phoneNumber || '',
-          jobTitle: user.jobTitle || '',
-          companyName: user.companyName || '',
-          industry: user.industry || '',
-          companySize: user.companySize || '',
-          companyWebsite: user.companyWebsite || '',
-          companyLocation: user.companyLocation || '',
-          aboutCompany: user.about || '',
-          profilePictureFile: null,
-        })
-        setProfilePictureError('')
+  const loadUserData = async () => {
+    try {
+      const email = getCurrentUserEmail()
+      const id = getCurrentUserID()
+      if (!email) return
+
+      const response = await fetchFromAPI(`/employer_profiles/${id}`)
+
+      if (response.profile) {
+        const profile = response.profile
+        setFormData(prev => ({
+          ...prev,
+          fullName: profile.full_name || '',
+          email: profile.email || '',
+          phoneNumber: profile.phone || '',
+          jobTitle: profile.job_title || '',
+          companyName: profile.company_name || '',
+          industry: profile.industry || '',
+          companySize: profile.company_size || '',
+          companyWebsite: profile.company_website || '',
+          companyLocation: profile.company_location || '',
+          aboutCompany: profile.about_company || '',
+        }))
       }
+    } catch (err) {
+      console.error('Error loading profile:', err.message)
     }
   }
 
@@ -709,8 +949,8 @@ function EmployerProfile() {
         <button type="button" onClick={loadUserData} className="px-5 py-2.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 font-medium transition-colors">
           Cancel
         </button>
-        <button type="submit" className="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium transition-colors">
-          Save Profile
+        <button type="submit" disabled={isLoading} className="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium transition-colors">
+          {isLoading ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </form>

@@ -36,8 +36,8 @@
  *   availability        : { mode: string, date: string|null }, // mode from AVAILABILITY_MODES
  * }
  */
-
-export const EMPLOYMENT_TYPES = ['Casual', 'Part Time', 'Contract', 'Full Time']
+// "Full-time", "Contract", "Remote", "Hybrid"
+export const EMPLOYMENT_TYPES = ["Full-time", "Contract", "Remote", "Hybrid"]
 
 export const WORK_ARRANGEMENTS = ['Remote', 'On Site', 'Hybrid']
 
@@ -164,4 +164,73 @@ export function getPostedJobById(id) {
 /** Clear all posted jobs (useful for testing). */
 export function clearPostedJobs() {
   localStorage.removeItem(STORAGE_KEY)
+}
+
+export function formatSalaryFromApi(job) {
+  if (job.salary) return job.salary
+  if (job.salary_min && job.salary_max) {
+    return job.salary_min === job.salary_max
+      ? `$${job.salary_min}`
+      : `$${job.salary_min} - $${job.salary_max}`
+  }
+  return ''
+}
+
+export function normalizeApiJob(job) {
+  if (!job) return null
+
+  // Parse requirements if it's a JSON string
+  let requirements = job.requirements || ''
+  if (typeof requirements === 'string' && requirements.startsWith('[')) {
+    try {
+      requirements = JSON.parse(requirements).join(', ')
+    } catch (e) {
+      // If parsing fails, keep as string
+    }
+  }
+
+  const calculateDaysAgo = (dateString) => {
+    if (!dateString) return 'recently'
+    const date = new Date(dateString)
+    const now = new Date()
+    const daysAgo = Math.floor((now - date) / (1000 * 60 * 60 * 24))
+    if (daysAgo === 0) return 'today'
+    if (daysAgo === 1) return '1 day ago'
+    if (daysAgo < 7) return `${daysAgo} days ago`
+    if (daysAgo < 30) return `${Math.floor(daysAgo / 7)} weeks ago`
+    if (daysAgo < 365) return `${Math.floor(daysAgo / 30)} months ago`
+    return `${Math.floor(daysAgo / 365)} years ago`
+  }
+
+  return {
+    id: job.id,
+    user_id: job.user_id,
+    title: job.title,
+    company: job.company,
+    employmentType: job.job_type,
+    workArrangement: job.workArrangement || 'On Site',
+    type: job.job_type,
+    location: job.location,
+    postedTime: `Posted ${calculateDaysAgo(job.created_at)}`,
+    postedDate: job.created_at?.split('T')[0],
+    salary: formatSalaryFromApi(job),
+    // Nested structure for job_description.jsx
+    description: {
+      requirements: job.description || 'Job description not available',
+      whatWeNeed: requirements
+        ? `Required Skills & Experience:\n${requirements}`
+        : 'Requirements not specified',
+      aboutCompany: job.company || 'Company info not available',
+      benefits: 'Competitive compensation and benefits package',
+    },
+    experience: job.experience || 0,
+    educationLevel: job.education_level || '',
+    skills: requirements,
+    certification: job.certification || '',
+    major: job.major || '',
+    industry: job.industry || '',
+    roleLevel: job.roleLevel || '',
+    preferredLanguages: job.preferredLanguages || [],
+    availability: job.availability || { mode: '', date: null },
+  }
 }

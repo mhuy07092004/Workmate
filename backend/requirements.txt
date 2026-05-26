@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+python-jose
+passlib
+werkzeug
+python-multipart
+sentence-transformers
+scikit-learn
+numpy
+PyPDF2

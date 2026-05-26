@@ -1,59 +1,81 @@
 /**
- * applicationStore.js — Mock persistence for job applications and saved resume
+ * applicationStore.js — Application and saved-resume helpers.
  *
- * Mirrors the pattern used by jobStore.js (localStorage-backed, no real API).
- *
- * Keys:
- *   workmate_applications   — array of submitted application objects
- *   workmate_saved_resume   — metadata for the candidate's saved CV (fileName, uploadedAt)
- *
- * Backend integration: replace every function body with the equivalent API call.
+ * Applications are persisted server-side via /applications. The saved-resume
+ * metadata (file name + upload time) is still stored in localStorage because
+ * the candidate's CV upload flow is local-only until the backend exposes a
+ * resume-upload endpoint.
  */
 
-const APPLICATIONS_KEY = 'workmate_applications'
+import { getCurrentUserId } from './userService.js'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const RESUME_KEY = 'workmate_saved_resume'
 
-// ── Applications ─────────────────────────────────────────────────────────────
-
-/**
- * Append a new application to localStorage.
- * @param {{ jobId: string|number, jobTitle: string, company: string, coverLetter: string, resumeSource: 'saved'|'uploaded', resumeFileName: string|null, appliedAt: string }} application
- */
-export function appendApplication(application) {
-  const existing = getApplications()
-  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([...existing, application]))
-}
-
-/** Read all submitted applications from localStorage. */
-export function getApplications() {
-  try {
-    const raw = localStorage.getItem(APPLICATIONS_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
+function authHeaders() {
+  const token = localStorage.getItem('workmate_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
 }
 
-/** Check if the current user has already applied to a given job id. */
-export function hasApplied(jobId) {
-  return getApplications().some(a => String(a.jobId) === String(jobId))
+/**
+ * Submit a job application to the backend.
+ * Returns the parsed JSON response on success or throws on failure.
+ */
+export async function submitApplication({ jobId }) {
+  const userId = getCurrentUserId()
+  if (!userId) throw new Error('You must be signed in to apply.')
+
+  const response = await fetch(`${API_BASE_URL}/applications/`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      user_id: parseInt(userId, 10),
+      job_id: parseInt(jobId, 10),
+      status: 'applied',
+    }),
+  })
+
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || 'Failed to apply for job')
+  }
+  return data
 }
 
-// ── Saved Resume ─────────────────────────────────────────────────────────────
+/** Fetch all applications submitted by the current candidate. */
+export async function fetchUserApplications() {
+  const userId = getCurrentUserId()
+  if (!userId) return []
 
-/**
- * Persist resume metadata (no actual file binary — frontend only).
- * @param {{ fileName: string, uploadedAt: string }} meta
- */
+  const response = await fetch(`${API_BASE_URL}/applications/user/${userId}`, {
+    headers: authHeaders(),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || 'Failed to load applications')
+  }
+  return data.applications || []
+}
+
+/** Check whether the current candidate has applied to a given job. */
+export async function hasApplied(jobId) {
+  try {
+    const applications = await fetchUserApplications()
+    return applications.some(a => String(a.job_id) === String(jobId))
+  } catch {
+    return false
+  }
+}
+
+// ── Saved Resume (localStorage only until backend supports uploads) ──────────
+
 export function saveResumeMetadata(meta) {
   localStorage.setItem(RESUME_KEY, JSON.stringify(meta))
 }
 
-/**
- * Read saved resume metadata.
- * Returns null when no resume has been saved.
- * @returns {{ fileName: string, uploadedAt: string } | null}
- */
 export function getSavedResume() {
   try {
     const raw = localStorage.getItem(RESUME_KEY)
@@ -63,7 +85,6 @@ export function getSavedResume() {
   }
 }
 
-/** Remove saved resume metadata. */
 export function clearSavedResume() {
   localStorage.removeItem(RESUME_KEY)
 }

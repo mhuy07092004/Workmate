@@ -6,8 +6,8 @@
  *   Center — Search bar (expands on focus, shows advanced filter popover)
  *   Right  — Notification bell + user dropdown (signed in) OR "Join Now" button (signed out)
  *
- * Auth state is read from localStorage ('workmate_signed_in').
- * Sign-out clears localStorage and redirects to /login.
+ * Auth state is read from localStorage ('workmate_token').
+ * Sign-out clears the JWT + cached user info and redirects to /login.
  *
  * Search bar behaviour:
  *   - Collapsed: standard rounded pill input.
@@ -118,9 +118,7 @@ function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [isSignedIn, setIsSignedIn] = useState(
-    () => localStorage.getItem('workmate_signed_in') === 'true',
-  )
+  const [isSignedIn, setIsSignedIn] = useState(() => !!localStorage.getItem('workmate_token'))
   const [userRole, setUserRole] = useState(() => getCurrentUserRole())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -215,7 +213,6 @@ function Navbar() {
   }
 
   const handleSignOut = () => {
-    localStorage.removeItem('workmate_signed_in')
     clearCurrentUser()
     setIsSignedIn(false)
     setDropdownOpen(false)

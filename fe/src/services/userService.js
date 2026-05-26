@@ -31,6 +31,8 @@ export function setCurrentUserEmail(email) {
 export function clearCurrentUser() {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.removeItem(ROLE_KEY)
+  localStorage.removeItem('workmate_token')
+  localStorage.removeItem('workmate_user_id')
 }
 
 /**
@@ -67,3 +69,18 @@ export function getCurrentUser() {
   return findUserByEmail(email)
 }
 
+/**
+ * Get the currently logged-in user's ID from localStorage
+ * Returns null if no user is logged in
+ */
+export function getCurrentUserId() {
+  return localStorage.getItem('workmate_user_id')
+}
+
+/**
+ * Set the currently logged-in user's ID in localStorage
+ * Called after successful login
+ */
+export function setCurrentUserId(id) {
+  localStorage.setItem('workmate_user_id', id)
+}

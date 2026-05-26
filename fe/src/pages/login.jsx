@@ -8,33 +8,54 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import userData from '../data/user.json'
-import { setCurrentUserEmail, setCurrentUserRole } from '../services/userService.js'
 
-/**
- * Mock users loaded from user.json.
- *
- * BACKEND DEV NOTE:
- * - Sign-in now checks email + password only.
- * - Role is inferred from the matched user record and persisted for role-based redirect/UI.
- * - Current role values in mock data are expected to be "candidate" | "employer".
- * - Replace this local lookup with POST /api/auth/login and use the returned user.role.
- * REMOVE THIS before going to production
- */
-const MOCK_USERS = userData.users
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-/** Human-readable labels for each role, used in success/error messages. */
+const TOKEN_KEY = 'workmate_token'
+const USER_EMAIL_KEY = 'workmate_current_user_email'
+const USER_ROLE_KEY = 'workmate_user_role'
+const USER_ID_KEY = 'workmate_user_id'
+
 const ROLE_LABELS = {
   candidate: 'Candidate',
   employer: 'Employer',
 }
 
 /**
- * Normalises a raw role string to either 'employer' or 'candidate'.
- * Treats any string starting with "emp" (case-insensitive) as 'employer'.
+ * Store JWT token
  */
-function normalizeRole(role) {
-  return role.trim().toLowerCase().startsWith('emp') ? 'employer' : 'candidate'
+function setAuthToken(token) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+/**
+ * Store user id, email, role
+ */
+function setUserInfo(email, role, id) {
+  localStorage.setItem(USER_EMAIL_KEY, email)
+  localStorage.setItem(USER_ROLE_KEY, role)
+  localStorage.setItem(USER_ID_KEY, id)
+}
+
+/**
+ * Fetch wrapper with error handling
+ */
+async function apiCall(endpoint, method, body) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || 'API Error')
+  }
+
+  return data
 }
 
 function Login() {
@@ -51,6 +72,9 @@ function Login() {
 
   /** Success message shown after a successful sign-up capture */
   const [success, setSuccess] = useState('')
+
+  /** Loading state for async operations */
+  const [isLoading, setIsLoading] = useState(false)
 
   /** Controlled fields for the sign-in form */
   const [signInForm, setSignInForm] = useState({
@@ -99,33 +123,39 @@ function Login() {
    * Backend integration: replace the credential check with an API call and
    * handle the returned token here.
    */
-  const handleSignInSubmit = (event) => {
+  const handleSignInSubmit = async (event) => {
     event.preventDefault()
     resetMessages()
+    setIsLoading(true)
 
     if (!signInForm.email || !signInForm.password) {
       setError('Email and password are required for sign in.')
+      setIsLoading(false)
       return
     }
 
-    const normalizedEmail = signInForm.email.trim().toLowerCase()
-    const matchedUser = MOCK_USERS.find(
-      (user) =>
-        user.email.trim().toLowerCase() === normalizedEmail &&
-        user.password === signInForm.password
-    )
+    try {
+      const response = await apiCall('/auth/signin', 'POST', {
+        email: signInForm.email.trim().toLowerCase(),
+        password: signInForm.password,
+      })
 
-    if (!matchedUser) {
-      setError('Invalid sign in credentials.')
-      return
+      // Store token
+      if (response.access_token) {
+        setAuthToken(response.access_token)
+      }
+
+      // Store user info
+      if (response.user) {
+        setUserInfo(response.user.email, response.user.role, response.user.id)
+      }
+
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setError(err.message || 'Invalid credentials.')
+    } finally {
+      setIsLoading(false)
     }
-
-    const roleKey = normalizeRole(matchedUser.role)
-
-    localStorage.setItem('workmate_signed_in', 'true')
-    setCurrentUserEmail(matchedUser.email)
-    setCurrentUserRole(roleKey)
-    navigate('/dashboard', { replace: true })
   }
 
   /**
@@ -137,21 +167,50 @@ function Login() {
    * Backend integration: replace the success stub with a POST /api/auth/register
    * call. On success, either navigate to / or show a verification prompt.
    */
-  const handleSignUpSubmit = (event) => {
+  const handleSignUpSubmit = async (event) => {
     event.preventDefault()
     resetMessages()
+    setIsLoading(true)
 
     if (!signUpForm.nameOrCompany || !signUpForm.email || !signUpForm.password) {
       setError('Please complete all required sign up fields.')
+      setIsLoading(false)
       return
     }
 
-    setSuccess(`${ROLE_LABELS[selectedRole]} account details captured successfully.`)
-    setSignUpForm({
-      nameOrCompany: '',
-      email: '',
-      password: '',
-    })
+    try {
+      // Sign up
+      await apiCall('/auth/signup', 'POST', {
+        full_name: signUpForm.nameOrCompany,
+        email: signUpForm.email.trim().toLowerCase(),
+        password: signUpForm.password,
+        role: selectedRole,
+      })
+
+      setSuccess(`${ROLE_LABELS[selectedRole]} account created successfully.`)
+
+      // Auto sign in after signup
+      const signInResponse = await apiCall('/auth/signin', 'POST', {
+        email: signUpForm.email.trim().toLowerCase(),
+        password: signUpForm.password,
+      })
+
+      if (signInResponse.access_token) {
+        setAuthToken(signInResponse.access_token)
+      }
+
+      if (signInResponse.user) {
+        setUserInfo(signInResponse.user.email, signInResponse.user.role, signInResponse.user.id)
+      }
+
+      setSignUpForm({ nameOrCompany: '', email: '', password: '' })
+      
+      setTimeout(() => navigate('/dashboard', { replace: true }), 1500)
+    } catch (err) {
+      setError(err.message || 'Sign up failed.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -345,8 +404,8 @@ function Login() {
                 </label>
               </div>
 
-              <button type="submit" className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800 transition-colors duration-200">
-                Sign In
+              <button type="submit" disabled={isLoading} className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800 transition-colors duration-200">
+                {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
           ) : (
@@ -387,8 +446,8 @@ function Login() {
                 className="w-full border border-slate-200 bg-slate-50 rounded-xl py-3 px-3.5 text-slate-900 focus:outline-[2px] focus:outline-blue-200 focus:border-blue-600"
               />
 
-              <button type="submit" className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800">
-                Sign Up
+              <button type="submit" disabled={isLoading} className="mt-4 border-0 rounded-xl bg-slate-900 text-slate-50 py-3 px-3.5 text-base font-bold cursor-pointer hover:bg-slate-800">
+                {isLoading ? 'Creating Account...' : 'Sign Up'}
               </button>
             </form>
           )}

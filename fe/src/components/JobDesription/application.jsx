@@ -16,63 +16,104 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import Navbar from '../Navbar/Navbar.jsx'
 import Footer from '../Footer/Footer.jsx'
 import JobTitle from './JobTitle.jsx'
-import { getPostedJobById } from '../../services/jobStore.js'
+import { normalizeApiJob } from '../../services/jobStore.js'
 import { getCurrentUserRole } from '../../services/userService.js'
 import {
-  appendApplication,
+  submitApplication,
+  fetchUserApplications,
   getSavedResume,
   saveResumeMetadata,
-  hasApplied,
 } from '../../services/applicationStore.js'
 
-// ── Mock job data (mirrors job_description.jsx) ──────────────────────────────
-
-const MOCK_JOB_DATA = {
-  id: 1,
-  title: 'Senior Software Engineer',
-  company: 'Google',
-  postedDate: '2025-04-20',
-}
-
-const MOCK_SAMPLE_JOB = {
-  id: 'sample',
-  title: 'sample test',
-  company: 'TechCorp Inc.',
-  postedDate: '2026-05-16',
-}
-
-function resolveJob(id) {
-  if (id === 'sample') return MOCK_SAMPLE_JOB
-  const posted = getPostedJobById(id)
-  if (posted) return { id: posted.id, title: posted.title, company: posted.company, postedDate: posted.postedTime || '' }
-  return MOCK_JOB_DATA
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 function JobApplication() {
   const { id } = useParams()
   const navigate = useNavigate()
   const role = getCurrentUserRole()
 
-  const job = resolveJob(id)
+  const [job, setJob] = useState(null)
+  const [loadingJob, setLoadingJob] = useState(true)
+  const [jobError, setJobError] = useState('')
+
   const savedResume = getSavedResume()
-  const alreadyApplied = hasApplied(id)
+  const [alreadyApplied, setAlreadyApplied] = useState(false)
 
   const [cvMode, setCvMode] = useState(savedResume ? 'saved' : 'upload')
   const [uploadedFile, setUploadedFile] = useState(null)
   const [coverLetter, setCoverLetter] = useState('')
   const [errors, setErrors] = useState({})
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!savedResume && cvMode === 'saved') setCvMode('upload')
   }, [savedResume, cvMode])
 
+  useEffect(() => {
+    let cancelled = false
+    const loadJob = async () => {
+      try {
+        setLoadingJob(true)
+        setJobError('')
+        const response = await fetch(`${API_BASE_URL}/jobs/${id}`)
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.detail || data.error || 'Job not found')
+        }
+        if (!cancelled) setJob(normalizeApiJob(data.job))
+      } catch (err) {
+        if (!cancelled) setJobError(err.message)
+      } finally {
+        if (!cancelled) setLoadingJob(false)
+      }
+    }
+    loadJob()
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchUserApplications()
+      .then(apps => {
+        if (!cancelled) {
+          setAlreadyApplied(apps.some(a => String(a.job_id) === String(id)))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
   // Guard — only candidates can access this page
   if (role !== 'candidate') {
     return <Navigate to={`/job/${id}`} replace />
+  }
+
+  if (loadingJob) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-100">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">Loading job...</main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (jobError || !job) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-100">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center text-red-500">
+          {jobError || 'Job not found'}
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   const handleFileUpload = (e) => {
@@ -99,21 +140,18 @@ function JobApplication() {
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
-    // BACKEND DEV NOTE: POST /api/jobs/:id/apply
-    const resumeFileName = cvMode === 'saved' ? (savedResume?.fileName ?? null) : (uploadedFile?.name ?? null)
-    appendApplication({
-      jobId: id,
-      jobTitle: job.title,
-      company: job.company,
-      coverLetter,
-      resumeSource: cvMode,
-      resumeFileName,
-      appliedAt: new Date().toISOString(),
-    })
-    setShowSuccessModal(true)
+    try {
+      setSubmitting(true)
+      await submitApplication({ jobId: id })
+      setShowSuccessModal(true)
+    } catch (err) {
+      setErrors(prev => ({ ...prev, submit: err.message || 'Failed to submit application' }))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleCloseSuccess = () => {
@@ -260,6 +298,10 @@ function JobApplication() {
             />
           </div>
 
+          {errors.submit && (
+            <p className="text-sm text-red-500">{errors.submit}</p>
+          )}
+
           {/* Section C — Actions */}
           <div className="flex gap-3 justify-end pb-4">
             <button
@@ -271,9 +313,10 @@ function JobApplication() {
             </button>
             <button
               type="submit"
-              className="cursor-pointer px-8 py-3 rounded-full bg-blue-700 text-white font-semibold text-sm hover:bg-blue-800 transition-colors"
+              disabled={submitting}
+              className="cursor-pointer px-8 py-3 rounded-full bg-blue-700 text-white font-semibold text-sm hover:bg-blue-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Submit Application
+              {submitting ? 'Submitting...' : 'Submit Application'}
             </button>
           </div>
 

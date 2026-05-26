@@ -1,229 +1,494 @@
 /**
- * dashboard.jsx — Main dashboard (root route)
+ * dashboard.jsx — Main dashboard
  *
- * Accessible to all users. The Navbar conditionally shows a user icon
- * (signed in) or a "Join Now" button (signed out) based on localStorage.
- *
- * Planned sections (to be built out):
- *   - Recommendation: personalised job/talent suggestions from the matching engine
- *   - Applications:   candidate application tracker / employer applicant list
- *   - Help:           support articles and contact options
- *
- * TODO (backend integration):
- *   - Read the current user from AuthContext (or equivalent) to personalise the greeting
- *   - Fetch recommendation and application data from the API on mount
+ * Updated:
+ *   - Uses newest backend jobs instead of mock recommendations
+ *   - Loading + error handling
+ *   - Sort newest jobs first
+ *   - Employer/candidate support
  */
-import { useState, useMemo } from 'react'
+
+import { useState, useEffect } from 'react'
+
 import Footer from '../components/Footer/Footer.jsx'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
-import { getPostedJobs } from '../services/jobStore.js'
-import { getCurrentUserRole } from '../services/userService.js'
 import NewsCard from '../components/NewsCard/NewsCard.jsx'
 import Contact from '../components/Contact/Contact.jsx'
 import Post from '../components/Posts/Post.jsx'
 import Showmore from '../components/Button/Showmore.jsx'
 
-// Mock job data for candidates
-const MOCK_JOBS = Array.from({ length: 12 }, (_, index) => ({
-  id: index + 1,
-  title: 'Fresher Frontend Developer',
-  company: 'Workmate Solutions',
-  type: 'Part Time',
-  location: 'Sydney, NSW',
-  postedTime: 'Posted 3 weeks ago'
-}))
+import { normalizeApiJob } from '../services/jobStore.js'
 
-// Employer's own posted job (single mock listing)
-const MOCK_EMPLOYER_POSTED_JOBS = [
-  {
-    id: 'sample',
-    title: 'sample test',
-    company: 'TechCorp Inc.',
-    type: 'Full Time',
-    location: 'San Francisco, CA',
-    postedTime: 'Posted 1 day ago',
-    salary: '$120k - $160k',
-  }
-]
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-// Mock posts data
-const MOCK_POSTS = [
-  {
-    id: 1,
-    author: 'Jane Smith',
-    timestamp: '2 hours ago',
-    content: 'Just finished an amazing project! Really proud of what our team accomplished this quarter. 🚀',
-    likes: 24,
-    comments: 5
-  },
-  {
-    id: 2,
-    author: 'Mike Johnson',
-    timestamp: '5 hours ago',
-    content: 'Beautiful day at the office! Check out this view from our new workspace.',
-    image: 'https://reformark.se/wp-content/uploads/2022/01/Mojang_JStrongPhoto_web_01.jpg',
-    likes: 56,
-    comments: 12
-  },
-  {
-    id: 3,
-    author: 'Sarah Chen',
-    timestamp: '1 day ago',
-    content: 'Hiring alert! Looking for talented software engineers to join our growing team. DM me if interested.',
-    likes: 38,
-    comments: 8
-  },
-  {
-    id: 4,
-    author: 'David Park',
-    timestamp: '2 days ago',
-    content: 'Excited to share that I just got promoted to Senior Developer! Hard work pays off. 🎉',
-    likes: 102,
-    comments: 23
-  }
-]
+function getUserRole() {
+  return localStorage.getItem('workmate_user_role')
+}
 
-const MOCK_NEWS = [
-  {
-    id: 1,
-    headline: 'ParkIT Just Hired 20 Fresher Software Engineers!',
-    company: 'ParkIT',
-    postedTime: '2 hours ago'
-  }
-]
+function getAuthToken() {
+  return localStorage.getItem('workmate_token')
+}
 
-function Dashboard() {
-  const isEmployer = getCurrentUserRole() === 'employer'
+/**
+ * Generic API fetch helper
+ */
+async function fetchFromAPI(endpoint) {
+  const token = getAuthToken()
 
-  // Candidates see the full recommended-jobs feed; employers see only their posted listings
-  const allJobs = useMemo(
-    () => isEmployer ? MOCK_EMPLOYER_POSTED_JOBS : [...MOCK_JOBS, ...getPostedJobs()],
-    [isEmployer],
+  const response = await fetch(
+    `${API_BASE_URL}${endpoint}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
+      },
+    }
   )
 
-  const [visibleJobs, setVisibleJobs] = useState(6)
-  const [visibleNews, setVisibleNews] = useState(4)
-  const [visiblePosts, setVisiblePosts] = useState(3)
+  const data = await response.json()
 
+  if (!response.ok) {
+    throw new Error(
+      data.detail || data.error || 'API Error'
+    )
+  }
+
+  return data
+}
+
+function Dashboard() {
+  /**
+   * User role
+   */
+  const isEmployer =
+    getUserRole() === 'employer'
+
+  /**
+   * State
+   */
+  const [jobs, setJobs] = useState([])
+  const [posts, setPosts] = useState([])
+  const [news, setNews] = useState([])
+
+  /**
+   * Loading states
+   */
+  const [loadingJobs, setLoadingJobs] =
+    useState(true)
+
+  const [loadingPosts, setLoadingPosts] =
+    useState(true)
+
+  const [loadingNews, setLoadingNews] =
+    useState(true)
+
+  /**
+   * Error states
+   */
+  const [errorJobs, setErrorJobs] =
+    useState('')
+
+  const [errorPosts, setErrorPosts] =
+    useState('')
+
+  const [errorNews, setErrorNews] =
+    useState('')
+
+  /**
+   * Visible counts
+   */
+  const [visibleJobs, setVisibleJobs] =
+    useState(6)
+
+  const [visibleNews, setVisibleNews] =
+    useState(4)
+
+  const [visiblePosts, setVisiblePosts] =
+    useState(3)
+
+  /**
+   * Load newest jobs
+   */
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        setLoadingJobs(true)
+        setErrorJobs('')
+
+        const data = await fetchFromAPI('/jobs')
+
+        // Normalize jobs
+        const normalizedJobs = (
+          data.jobs || []
+        ).map(normalizeApiJob)
+
+        /**
+         * Sort newest first
+         * Higher ID = newer job
+         */
+        const sortedJobs = normalizedJobs.sort(
+          (a, b) => b.id - a.id
+        )
+
+        setJobs(sortedJobs)
+      } catch (err) {
+        console.error(
+          'Error loading jobs:',
+          err
+        )
+
+        setErrorJobs(err.message)
+        setJobs([])
+      } finally {
+        setLoadingJobs(false)
+      }
+    }
+
+    loadJobs()
+  }, [])
+
+  /**
+   * Load posts
+   */
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        setLoadingPosts(true)
+        setErrorPosts('')
+
+        const data = await fetchFromAPI('/posts')
+
+        setPosts(data.posts || [])
+      } catch (err) {
+        console.error(
+          'Error loading posts:',
+          err
+        )
+
+        setErrorPosts(err.message)
+        setPosts([])
+      } finally {
+        setLoadingPosts(false)
+      }
+    }
+
+    loadPosts()
+  }, [])
+
+  /**
+   * Load news
+   */
+  useEffect(() => {
+    const loadNews = async () => {
+      try {
+        setLoadingNews(true)
+        setErrorNews('')
+
+        const data = await fetchFromAPI('/news')
+
+        setNews(data.news || [])
+      } catch (err) {
+        console.error(
+          'Error loading news:',
+          err
+        )
+
+        setErrorNews(err.message)
+        setNews([])
+      } finally {
+        setLoadingNews(false)
+      }
+    }
+
+    loadNews()
+  }, [])
+
+  /**
+   * Show more handlers
+   */
   const handleShowMoreJobs = () => {
-    setVisibleJobs(prev => Math.min(prev + 6, allJobs.length))
+    setVisibleJobs(prev =>
+      Math.min(prev + 6, jobs.length)
+    )
   }
 
   const handleShowMoreNews = () => {
-    setVisibleNews(prev => Math.min(prev + 4, MOCK_NEWS.length))
+    setVisibleNews(prev =>
+      Math.min(prev + 4, news.length)
+    )
   }
 
   const handleShowMorePosts = () => {
-    setVisiblePosts(prev => Math.min(prev + 3, MOCK_POSTS.length))
+    setVisiblePosts(prev =>
+      Math.min(prev + 3, posts.length)
+    )
   }
 
-  const displayedJobs = allJobs.slice(0, visibleJobs)
-  const displayedNews = MOCK_NEWS.slice(0, visibleNews)
-  const displayedPosts = MOCK_POSTS.slice(0, visiblePosts)
+  /**
+   * Visible data
+   */
+  const displayedJobs = jobs.slice(
+    0,
+    visibleJobs
+  )
+
+  const displayedNews = news.slice(
+    0,
+    visibleNews
+  )
+
+  const displayedPosts = posts.slice(
+    0,
+    visiblePosts
+  )
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Top navigation bar — shared across all authenticated pages */}
       <Navbar />
 
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-6 items-start">
-        {/* Left sidebar - Contact (sticky) */}
         <Contact />
 
-        {/* Middle column - Main content (scrollable) */}
         <div className="flex-1 min-w-0 flex flex-col gap-8">
-        {/* Welcome banner */}
-        <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
-          <h1 className="mb-2.5 text-[1.6rem] text-slate-900">Welcome to Workmate Dashboard</h1>
-          <p className="text-slate-600 leading-relaxed">
-            You are signed in successfully. Use navigation above to browse recommendations,
-            applications, and support resources.
-          </p>
-        </section>
+          {/* Welcome Banner */}
+          <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+            <h1 className="mb-2.5 text-[1.6rem] text-slate-900">
+              Welcome to Workmate Dashboard
+            </h1>
 
-        {/* Jobs Section — employer sees posted jobs, candidate sees recommendations */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">
-              {isEmployer ? 'Posted Jobs' : 'Recommended Jobs'}
-            </h2>
-            <p className="text-slate-600">
-              {isEmployer
-                ? 'Your active job listings'
-                : 'Personalized job recommendations based on your profile and preferences'}
+            <p className="text-slate-600 leading-relaxed">
+              You are signed in successfully.
+              Browse the latest jobs,
+              applications, and community
+              updates.
             </p>
-          </div>
-          
-          {/* Job cards grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-            {displayedJobs.map(job => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-          
-          {/* Show More/Show Less — hidden when total fits in a single page */}
-          {allJobs.length > 6 && (
-            <Showmore
-              visibleCount={visibleJobs}
-              totalCount={allJobs.length}
-              initialCount={6}
-              onShowMore={handleShowMoreJobs}
-              onShowLess={() => setVisibleJobs(6)}
-            />
-          )}
-        </section>
+          </section>
 
-        {/* Hiring News Section */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Hiring News</h2>
-            <p className="text-slate-600">Stay updated with the latest hiring trends and company news</p>
-          </div>
+          {/* Jobs Section */}
+          <section>
+            <div className="mb-6">
+              <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">
+                {isEmployer
+                  ? 'Newest Posted Jobs'
+                  : 'Newest Jobs'}
+              </h2>
 
-          {/* News cards - single column layout */}
-          <div className="space-y-4 mb-6">
-            {displayedNews.map(news => (
-              <NewsCard key={news.id} news={news} />
-            ))}
-          </div>
+              <p className="text-slate-600">
+                {isEmployer
+                  ? 'Latest jobs posted on the platform'
+                  : 'Discover the newest opportunities available right now'}
+              </p>
+            </div>
 
-          {/* Show More/Show Less buttons */}
-          <Showmore
-            visibleCount={visibleNews}
-            totalCount={MOCK_NEWS.length}
-            initialCount={4}
-            itemName="News"
-            onShowMore={handleShowMoreNews}
-            onShowLess={() => setVisibleNews(4)}
-          />
-        </section>
+            {/* Loading */}
+            {loadingJobs && (
+              <div className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+                <p className="text-slate-600">
+                  Loading newest jobs...
+                </p>
+              </div>
+            )}
 
-        {/* Posts Section */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">Posts</h2>
-            <p className="text-slate-600">Connect with professionals and share insights</p>
-          </div>
-          <div className="space-y-4 mb-6">
-            {displayedPosts.map(post => (
-              <Post key={post.id} post={post} />
-            ))}
-          </div>
+            {/* Error */}
+            {errorJobs && (
+              <div className="bg-red-50 rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+                <p className="text-red-700">
+                  Error loading jobs:{' '}
+                  {errorJobs}
+                </p>
+              </div>
+            )}
 
-          {/* Show More/Show Less buttons */}
-          <Showmore
-            visibleCount={visiblePosts}
-            totalCount={MOCK_POSTS.length}
-            initialCount={3}
-            itemName="Posts"
-            onShowMore={handleShowMorePosts}
-            onShowLess={() => setVisiblePosts(3)}
-          />
-        </section>
+            {/* Empty */}
+            {!loadingJobs &&
+              !errorJobs &&
+              jobs.length === 0 && (
+                <div className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+                  <p className="text-slate-600">
+                    No jobs available at this
+                    time.
+                  </p>
+                </div>
+              )}
+
+            {/* Jobs */}
+            {!loadingJobs &&
+              !errorJobs &&
+              jobs.length > 0 && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+                    {displayedJobs.map(job => (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                      />
+                    ))}
+                  </div>
+
+                  {jobs.length > 6 && (
+                    <Showmore
+                      visibleCount={
+                        visibleJobs
+                      }
+                      totalCount={jobs.length}
+                      initialCount={6}
+                      onShowMore={
+                        handleShowMoreJobs
+                      }
+                      onShowLess={() =>
+                        setVisibleJobs(6)
+                      }
+                    />
+                  )}
+                </>
+              )}
+          </section>
+
+          {/* News Section */}
+          <section>
+            <div className="mb-6">
+              <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">
+                Hiring News
+              </h2>
+
+              <p className="text-slate-600">
+                Stay updated with the latest
+                hiring trends and company
+                news
+              </p>
+            </div>
+
+            {loadingNews && (
+              <p className="text-slate-600">
+                Loading news...
+              </p>
+            )}
+
+            {errorNews && (
+              <p className="text-red-600">
+                Error loading news:{' '}
+                {errorNews}
+              </p>
+            )}
+
+            {!loadingNews &&
+              news.length === 0 && (
+                <p className="text-slate-600">
+                  No news available at this
+                  time.
+                </p>
+              )}
+
+            {!loadingNews &&
+              news.length > 0 && (
+                <>
+                  <div className="space-y-4 mb-6">
+                    {displayedNews.map(
+                      item => (
+                        <NewsCard
+                          key={item.id}
+                          news={item}
+                        />
+                      )
+                    )}
+                  </div>
+
+                  {news.length > 4 && (
+                    <Showmore
+                      visibleCount={
+                        visibleNews
+                      }
+                      totalCount={news.length}
+                      initialCount={4}
+                      itemName="News"
+                      onShowMore={
+                        handleShowMoreNews
+                      }
+                      onShowLess={() =>
+                        setVisibleNews(4)
+                      }
+                    />
+                  )}
+                </>
+              )}
+          </section>
+
+          {/* Posts Section */}
+          <section>
+            <div className="mb-6">
+              <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">
+                Posts
+              </h2>
+
+              <p className="text-slate-600">
+                Connect with professionals and
+                share insights
+              </p>
+            </div>
+
+            {loadingPosts && (
+              <p className="text-slate-600">
+                Loading posts...
+              </p>
+            )}
+
+            {errorPosts && (
+              <p className="text-red-600">
+                Error loading posts:{' '}
+                {errorPosts}
+              </p>
+            )}
+
+            {!loadingPosts &&
+              posts.length === 0 && (
+                <p className="text-slate-600">
+                  No posts available at this
+                  time.
+                </p>
+              )}
+
+            {!loadingPosts &&
+              posts.length > 0 && (
+                <>
+                  <div className="space-y-4 mb-6">
+                    {displayedPosts.map(
+                      post => (
+                        <Post
+                          key={post.id}
+                          post={post}
+                        />
+                      )
+                    )}
+                  </div>
+
+                  {posts.length > 3 && (
+                    <Showmore
+                      visibleCount={
+                        visiblePosts
+                      }
+                      totalCount={
+                        posts.length
+                      }
+                      initialCount={3}
+                      itemName="Posts"
+                      onShowMore={
+                        handleShowMorePosts
+                      }
+                      onShowLess={() =>
+                        setVisiblePosts(3)
+                      }
+                    />
+                  )}
+                </>
+              )}
+          </section>
         </div>
 
-        {/* Right column - Empty placeholder */}
+        {/* Right Spacer */}
         <div className="w-[240px] shrink-0 hidden xl:block" />
       </main>
 
