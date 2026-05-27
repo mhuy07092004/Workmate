@@ -38,6 +38,7 @@ const CANDIDATE_DROPDOWN_ITEMS = [
   { label: 'My Applications', key: 'applications', path: '/applications' },
   { label: 'My Networks', key: 'networks', path: '/mynetwork' },
   { label: 'Post', key: 'post', path: '/post' },
+  { label: 'News', key: 'news', path: '/news' },
 ]
 
 /** Dropdown items for employers */
@@ -46,8 +47,7 @@ const EMPLOYER_DROPDOWN_ITEMS = [
   { label: 'Settings', key: 'settings', path: '/settings' },
   { label: 'Applicants', key: 'applications', path: '/applications' },
   { label: 'Post', key: 'post', path: '/post' },
-  { label: 'Help', path: '/help' },
-
+  { label: 'News', key: 'news', path: '/news' },
 ]
 
 /** Navigation buttons for candidates */
@@ -55,15 +55,16 @@ const CANDIDATE_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
   { label: 'Help', path: '/help' },
   { label: 'Recommended Jobs', path: '/recommended-jobs' },
-  { label: 'News', path: '/news' },
+  { label: 'Subscription', path: '/subscription' },
 ]
 
 /** Navigation buttons for employers */
 const EMPLOYER_NAV_BUTTONS = [
   { label: 'Home', path: '/dashboard' },
+  { label: 'Help', path: '/help' },
   { label: 'Post a Job', path: '/post-job' },
-  { label: 'News', path: '/news' },
   { label: 'Recommended Candidates', path: '/recommended-candidates' },
+  { label: 'Subscription', path: '/subscription' },
 ]
 
 // BACKEND DEV NOTE: Replace with API call to fetch real notifications

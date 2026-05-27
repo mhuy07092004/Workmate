@@ -11,6 +11,7 @@ const TITLES = {
   '/lawyers-corners': "Lawyer's Corners",
   '/recommended-candidates': 'Recommended Candidates',
   '/recommended-jobs': 'Recommended Jobs',
+  '/subscription': 'Subscription',
 }
 
 function PlaceholderPage() {

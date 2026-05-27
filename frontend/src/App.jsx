@@ -46,6 +46,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
+        <Route path="/subscription" element={<PlaceholderPage />} />
         <Route path="/help" element={<Help />} />
         <Route path="/recommended-candidates" element={<RecommendedCandidate />} />
         <Route path="/recommended-jobs" element={<RecommendedJob />} />
