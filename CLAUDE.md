@@ -1,18 +1,25 @@
 # Project Overview
 
-Workmate is a professional networking and AI-assisted job-matching web application built for a CSIT314 university project. It serves two user roles — **candidates** (job seekers) and **employers** — providing a LinkedIn-style interface for browsing jobs, posting listings, reviewing applicants, and following career news. The project is currently **frontend-only**: all data is sourced from inline mock arrays and `fe/src/data/user.json`; `localStorage` stands in for a real auth backend until API integration is complete.
+Workmate is a professional networking and AI-assisted job-matching web application built for a CSIT314 university project. It serves two user roles — **candidates** (job seekers) and **employers** — providing a LinkedIn-style interface for browsing jobs, posting listings, reviewing applicants, and following career news.
+
+**Current state:** The project is **hybrid** — a FastAPI + SQLite backend provides real persistence, JWT auth, and AI recommendations; the React frontend calls the API for most core flows but several UI areas still use inline mock data or placeholders.
 
 ## Repository Layout
 
 ```
 Workmate/
-├── fe/   # Frontend — React + Vite (run `npm install && npm run dev` from here)
-└── be/   # Backend — API server (see be/README.md for spec)
+├── frontend/          # React + Vite (npm install && npm run dev)
+├── backend/           # FastAPI + SQLite (uvicorn main:app --reload)
+├── docker-compose.yml # Frontend Docker only (dev + prod profiles)
+├── CLAUDE.md          # This file — full project reference for AI agents
+└── README.md          # Quick-start guide for developers
 ```
 
 ---
 
 # Tech Stack
+
+## Frontend
 
 | Layer | Technology |
 |---|---|
@@ -24,102 +31,467 @@ Workmate/
 | Linting | ESLint 9, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh` |
 | Types | `@types/react` / `@types/react-dom` (dev-only; no TypeScript compilation) |
 | State | Local `useState` only — no Redux, no Context API |
+| HTTP | Native `fetch` — no axios |
+| API config | `VITE_API_BASE_URL` in `frontend/.env` (default `http://127.0.0.1:8000`) |
+| Container | `frontend/Dockerfile` (dev HMR + nginx prod); `docker-compose.yml` profiles |
+
+## Backend
+
+| Layer | Technology |
+|---|---|
+| Framework | FastAPI |
+| Server | Uvicorn |
+| ORM / DB | SQLAlchemy + SQLite (`workmate.db`) |
+| Auth | python-jose (JWT, HS256) + werkzeug (password hashing) |
+| File uploads | python-multipart; PDF parsing via PyPDF2 |
+| AI matching | sentence-transformers (`all-MiniLM-L6-v2`), scikit-learn cosine similarity, numpy |
+| Fuzzy search | fuzzywuzzy + python-Levenshtein |
+| Static files | FastAPI `StaticFiles` at `/uploads` |
+| CORS | `CORSMiddleware`, `allow_origins=["*"]` |
+
+---
+
+# Running Locally
+
+## Backend (port 8000)
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+- API docs: `http://127.0.0.1:8000/docs`
+- SQLite DB created on first startup at `backend/workmate.db`
+- Seed data (~50 jobs, 5 posts, 5 news) runs automatically if DB is empty
+- Uploads stored in `backend/uploads/resumes/` and `backend/uploads/profiles/`
+
+## Frontend (port 5173)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Ensure `frontend/.env` contains:
+
+```
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+## Docker (frontend only)
+
+```bash
+# Development (Vite HMR) → http://localhost:5173
+docker compose --profile dev up --build
+
+# Production (nginx) → http://localhost:8080
+docker compose --profile prod up --build
+```
+
+The backend is **not** in `docker-compose.yml` yet — run it locally via uvicorn. The commented backend service still references the old `./be` path.
+
+---
+
+# Backend Architecture
+
+## Layer pattern
+
+```
+HTTP Request
+    ↓
+routes/          # FastAPI routers — parse request, call service
+    ↓
+services/        # Business logic, validation, auth checks
+    ↓
+repositories/    # SQLAlchemy queries
+    ↓
+models/          # SQLAlchemy ORM table definitions
+    ↓
+SQLite (workmate.db)
+```
+
+Entry point: [`backend/main.py`](backend/main.py) — mounts 11 routers, CORS, static `/uploads`, startup `init_db()` + `seed_database()`.
+
+## Route modules
+
+| Prefix | Module | Purpose |
+|---|---|---|
+| `/auth` | `routes/auth.py` | Sign-up, sign-in |
+| `/users` | `routes/users.py` | User CRUD |
+| `/profiles` | `routes/profiles.py` | Candidate profiles + resume/picture upload |
+| `/employer_profiles` | `routes/employer_profiles.py` | Employer company profiles |
+| `/jobs` | `routes/jobs.py` | Job CRUD + search |
+| `/applications` | `routes/applications.py` | Apply, list applications, update status |
+| `/saved` | `routes/saved.py` | Save/unsave jobs and candidates |
+| `/posts` | `routes/posts.py` | Social posts + comments |
+| `/news` | `routes/news.py` | News articles CRUD |
+| `/candidates` | `routes/candidates.py` | AI job recommendations for candidates |
+| `/recommendations` | `routes/recommendations.py` | AI candidate recommendations for employers |
+
+**Note:** There is **no `/api` prefix**. Actual paths are e.g. `/auth/signin`, not `/api/auth/login`.
+
+## API endpoints (summary)
+
+### Auth — no JWT required
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| POST | `/auth/signup` | `{ email, password, full_name, role }` | `{ message }` (201) — no token |
+| POST | `/auth/signin` | `{ email, password }` | `{ access_token, user: { id, email, full_name, role } }` |
+
+### Jobs
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/jobs/` | No | List all jobs |
+| GET | `/jobs/{job_id}` | No | Job detail |
+| POST | `/jobs/` | JWT | Create job; `user_id` set from token |
+| PUT | `/jobs/{job_id}` | JWT | Update job |
+| DELETE | `/jobs/{job_id}` | JWT | Delete job |
+| POST | `/jobs/search` | No | Filter body: `location`, `title`, `company`, `job_type`, `salary_min`, `salary_max` |
+
+### Applications — JWT required
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/applications/user/{user_id}` | Candidate's applications |
+| GET | `/applications/job/{job_id}` | Applicants for a job (employer) |
+| POST | `/applications/` | `{ user_id, job_id, status }` |
+| PUT | `/applications/{id}/status` | `{ status }` |
+| DELETE | `/applications/{id}` | Remove application |
+
+### Saved — JWT required
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/saved/user/{user_id}` | All saved items |
+| POST | `/saved/` | Save job or candidate |
+| DELETE | `/saved/{saved_id}` | Unsave |
+| GET | `/saved/check/{user_id}/{job_id}` | Check if job saved |
+| POST | `/saved/job/{user_id}/{job_id}` | Toggle save |
+
+### Profiles — JWT required
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/profiles/{user_id}` | Candidate profile |
+| POST | `/profiles/` | Create profile |
+| PUT | `/profiles/{user_id}` | Update profile |
+| POST | `/profiles/upload/{user_id}` | Multipart: resume PDF + profile picture; triggers embedding |
+
+### Employer profiles — JWT required
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/employer_profiles/{user_id}` | Employer profile |
+| POST | `/employer_profiles/` | Create |
+| PUT | `/employer_profiles/{user_id}` | Update |
+
+### Posts — JWT for mutations
+
+| Method | Path | Auth |
+|---|---|---|
+| GET | `/posts/` | No |
+| GET | `/posts/{post_id}` | No |
+| POST | `/posts/` | JWT |
+| PUT | `/posts/{post_id}` | JWT |
+| DELETE | `/posts/{post_id}` | JWT |
+| POST | `/posts/{post_id}/comments` | JWT |
+
+### News — JWT required for all routes
+
+| Method | Path |
+|---|---|
+| GET | `/news/` |
+| GET | `/news/{news_id}` |
+| POST | `/news/` |
+| PUT | `/news/{news_id}` |
+| DELETE | `/news/{news_id}` |
+
+### AI recommendations
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/candidates/recommended-jobs/{user_id}?limit=` | No | Resume–job cosine similarity |
+| POST | `/candidates/update-resume-embedding/{user_id}` | No | Regenerate resume embedding |
+| POST | `/candidates/batch-generate-job-embeddings` | No | Batch job embedding generation |
+| GET | `/recommendations/candidates?job_id=&limit=` | No | Top candidates for a job |
+
+### Users
+
+| Method | Path | Auth |
+|---|---|---|
+| GET | `/users/` | No |
+| GET | `/users/{user_id}` | No |
+| POST | `/users/` | No |
+| PUT | `/users/{user_id}` | JWT |
+| DELETE | `/users/{user_id}` | JWT |
+
+### Static
+
+| Path | Notes |
+|---|---|
+| `/uploads/*` | Resume and profile picture files |
+| `/docs` | Swagger UI |
+
+## Database models
+
+| Model file | Table | Key fields |
+|---|---|---|
+| `models/user.py` | `users` | `id`, `full_name`, `email`, `password`, `role`, timestamps |
+| `models/job.py` | `jobs` | `user_id`, `title`, `company`, `job_type`, `location`, `description`, `requirements`, `salary_min/max`, `job_embedding` (JSON) |
+| `models/profile.py` | `profiles` | `user_id`, contact/education fields, `resume_url`, `resume_text`, `resume_embedding`, `experiences` (JSON) |
+| `models/employer_profile.py` | `employer_profiles` | Company fields tied to `user_id` |
+| `models/application.py` | `applications` | `user_id`, `job_id`, `status` (default `"applied"`) |
+| `models/saved_item.py` | `saved_items` | `user_id`, optional `job_id` or `candidate_id` |
+| `models/post.py` | `posts` | `author_id`, `content`, `image_url`, `likes`, `comments_count` |
+| `models/comment.py` | `comments` | `post_id`, `user_id`, `content` |
+| `models/news.py` | `news` | `headline`, `company`, `content`, `image_url` |
+
+## Seed data
+
+[`backend/seed_data.py`](backend/seed_data.py) runs on startup if no jobs exist:
+- ~50 synthetic jobs with embeddings
+- 5 posts
+- 5 news articles
+
+**Does not seed demo users.** Users must register via `/auth/signup` or be created manually.
+
+## AI recommendation flow
+
+```mermaid
+flowchart LR
+  upload["POST /profiles/upload/:id"] --> extract["PyPDF2 extract resume text"]
+  extract --> embedResume["generate_embedding resume"]
+  createJob["POST /jobs/"] --> embedJob["generate_embedding job description"]
+  embedResume --> store["Store embeddings in SQLite JSON columns"]
+  embedJob --> store
+  store --> match["cosine_similarity on request"]
+  match --> recJobs["GET /candidates/recommended-jobs/:userId"]
+  match --> recCands["GET /recommendations/candidates?job_id="]
+```
+
+Model: `all-MiniLM-L6-v2` via sentence-transformers. See [`backend/utils/embeddings.py`](backend/utils/embeddings.py).
+
+## Auth implementation
+
+- Password hashing: werkzeug `generate_password_hash` / `check_password_hash`
+- JWT config: [`backend/config.py`](backend/config.py) — `SECRET_KEY`, HS256, 30-minute expiry
+- Token payload: `{ sub: email, role, user_id, exp }`
+- Protected routes: `HTTPBearer` dependency `get_current_user()` in [`backend/services/auth_service.py`](backend/services/auth_service.py)
+- **Gaps:** No logout endpoint, no refresh tokens, minimal role enforcement on routes
 
 ---
 
 # Frontend Structure
 
+All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`frontend/src/App.jsx`](frontend/src/App.jsx).
+
 ## Pages
 
-All pages are **lazy-loaded** via `React.lazy` + `<Suspense>` in [`fe/src/App.jsx`](fe/src/App.jsx).
-
-| File | Route | Description |
-|---|---|---|
-| `landing.jsx` | `/` | Cinematic hero page with a fullscreen background video, sticky navbar, and scroll-reveal sections (About, Reach Us). First entry point for unauthenticated visitors. |
-| `login.jsx` | `/login` | Two-column layout: left branding panel with animated floating bubbles; right panel with sign-in / sign-up tab switcher. Sign-in validates email + password against `MOCK_USERS` from `user.json` — role is inferred from the matched record via `normalizeRole()` (no role selector on sign-in). Sign-up tab shows a Candidate / Employer role toggle; the name field label adapts to the selected role. Sign-in form includes a show/hide password toggle and a "Remember me" checkbox (UI only). On success writes `workmate_signed_in`, email, and role to `localStorage` via `userService.js` and redirects to `/dashboard`. |
-| `dashboard.jsx` | `/dashboard` | Main app home after sign-in. Displays a job card grid, a social post feed, a news ticker, and a contact sidebar — all powered by inline mock data. |
-| `recommended_job.jsx` | `/recommended-jobs` | Candidate-facing page with three job sections (AI-chosen, based on viewed jobs, related roles). Includes a collapsible `JobFilter` panel and show-more toggle per section. |
-| `recommended_candidate.jsx` | `/recommended-candidates` | Employer-facing mirror of the above; shows candidate cards in three sections (AI-chosen, search history, saved). Uses `CandidateFilter` and the same expand/collapse pattern. |
-| `job_description.jsx` | `/job/:id` | Full job detail view with requirements, company description, benefits, and an Apply button. Currently renders a single mock object regardless of the `:id` param. |
-| `news.jsx` | `/news` | Browsable news feed split into "Latest News" and a secondary section. Each card links to `/news/:id`. |
-| `news_information.jsx` | `/news/:id` | Full article view for a news item with a featured image, author, and body text. Like `job_description`, still uses a single mock object for all IDs. |
-| `post.jsx` | `/post` | Social feed page with a create-post textarea and a list of sample posts rendered by the `Post` component. |
-| `post_job.jsx` | `/post-job` | Employer form for creating a new job listing: title, company info, description, education level, required skills, years of experience, work mode, and location. Includes client-side validation. |
-| `profile.jsx` | `/profile` | Candidate/employer profile editor. Manages personal info, education, work experience (dynamic entries), a 400-word "About You" bio, resume upload, and profile picture preview. Pre-populates from `userService` on mount. |
-| `applications.jsx` | `/applications` | Role-aware page: candidates see saved jobs + applied jobs (JobCards); employers see their posted jobs + saved candidates (CandidateCards). Role is read from `localStorage` via `userService`. |
-| `mynetwork.jsx` | `/mynetwork` | Professional connections page — layout and header are in place; content section shows a "coming soon" placeholder. |
-| `settings.jsx` | `/settings` | Settings page shell that reuses `placeholder.css` styling and displays a "coming soon" message with a back-to-home link. |
-| `help.jsx` | `/help` | Help Center with a static FAQ accordion and a contact/support section linking to the `Contact` component. |
-| `placeholder.jsx` | `/hr-news`, `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | Shared "coming soon" shell used for all unbuilt routes. Reads the current path to display a matching title. |
+| File | Route | Role | Data source | Description |
+|---|---|---|---|---|
+| `landing.jsx` | `/` | Guest | Static | Cinematic hero with CloudFront video, sticky nav, About / Reach Us scroll sections. "Join Now" → `/login`. |
+| `login.jsx` | `/login` | Guest | **API** | Sign-in / sign-up tabs. API: `POST /auth/signin`, `POST /auth/signup`. Stores JWT + user info. Role toggle on sign-up only. |
+| `dashboard.jsx` | `/dashboard` | Both | **API** | Job grid, news ticker, posts feed, Contact sidebar. API: `GET /jobs`, `/posts`, `/news`. Uses `normalizeApiJob()`. |
+| `recommended_job.jsx` | `/recommended-jobs` | Candidate | **API + mock fallback** | `JobFilter`, AI recommendations via `GET /candidates/recommended-jobs/:userId`, search via `POST /jobs/search`. Fallback mock `AI_CHOSEN_JOBS` if API fails. |
+| `recommended_candidate.jsx` | `/recommended-candidates` | Employer | **API** | Job selector, `GET /recommendations/candidates?job_id=`. Client-side filter/sort via `CandidateFilter`. |
+| `job_description.jsx` | `/job/:id` | Both | **API** | Dynamic job detail. Save/unsave, apply button (candidates), applicant list (job owner). API: `/jobs/:id`, `/saved/*`, `/applications/job/:id`. |
+| `JobDesription/application.jsx` | `/job/:id/application` | Candidate | **API** | Apply flow: CV upload/saved CV, cover letter UI, success modal. API: `GET /jobs/:id`, `POST /applications/` via `applicationStore.js`. Cover letter not sent to API. |
+| `post_job.jsx` | `/post-job` | Employer | **API** | Job posting form with validation. API: `POST /jobs/`. Uses `jobStore.js` constants. |
+| `post.jsx` | `/post` | Both | **API** | Create-post form + feed. API: `GET/POST /posts/`. Dead code: unused `SAMPLE_POSTS` array. |
+| `profile.jsx` | `/profile` | Both | **API** | Candidate/employer profile editor. API: `/profiles/*`, `/employer_profiles/*`, `POST /profiles/upload/:id`. |
+| `applications.jsx` | `/applications` | Both | **API + mock** | Candidate: saved + applied jobs (API). Employer: posted jobs (API) + **mock** `savedCandidates` array. |
+| `news.jsx` | `/news` | Both | **Mock** | Three sections (Latest / Hot / Big Company) from inline `MOCK_NEWS`. Dashboard uses API news; these pages do not. |
+| `news_information.jsx` | `/news/:id` | Both | **Mock** | Single `MOCK_NEWS_DATA` for all IDs — ignores `:id` param. |
+| `help.jsx` | `/help` | Both | Static | FAQ accordion + contact section. |
+| `settings.jsx` | `/settings` | Both | Placeholder | Coming-soon shell with `placeholder.css`. |
+| `mynetwork.jsx` | `/mynetwork` | Both | Placeholder | Header + "coming soon". |
+| `placeholder.jsx` | `/hr-news`, `/subscription`, `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | Both | Placeholder | Shared coming-soon shell; title derived from path. |
 
 ## Components
 
-Components live under `fe/src/components/` in feature folders (`ComponentName/ComponentName.jsx`).
+Components live under `frontend/src/components/` in feature folders (`ComponentName/ComponentName.jsx`).
 
 **Layout**
 
-- **`Navbar/Navbar.jsx`** — Top navigation bar with three zones: brand logo, expandable search bar (with role-appropriate filter popover), and a user dropdown or "Join Now" button. Auth state is read from `localStorage`; sign-out clears storage and redirects to `/login`. Nav links and dropdown items differ between candidate and employer roles.
-- **`Footer/Footer.jsx`** — Dark footer with a site-map, legal links, and a "Back to top" scroll button. Used on all authenticated pages.
+- **`Navbar/Navbar.jsx`** — Brand, expandable search + filter popover, notification bell, role-aware nav links/dropdown. Auth via `workmate_token`. Sign-out clears storage → `/login`. Search and notifications are **UI-only mock** (BACKEND DEV NOTE in file).
+- **`Footer/Footer.jsx`** — Site map, legal links, back-to-top. Used on authenticated pages.
 
 **Cards**
 
-- **`JobCard/JobCard.jsx`** — Clickable card linking to `/job/:id`; displays company initial avatar, job title, company name, employment type, and location. Used on `dashboard`, `recommended_job`, and `applications`.
-- **`CandidateCard/CandidateCard.jsx`** — Card displaying a candidate's name, location, applied role, experience, and education. Used on `recommended_candidate` and `applications` (employer view).
-- **`NewsCard/NewsCard.jsx`** — Left-bordered card linking to `/news/:id`; shows news headline, source company, and post time. Used on `dashboard` and `news`.
+- **`JobCard/JobCard.jsx`** — Clickable card → `/job/:id`. Optional inline `SaveJob` button. Used on dashboard, recommended_job, applications.
+- **`CandidateCard/CandidateCard.jsx`** — Candidate avatar, name, location, resume link (prefixed with `VITE_API_BASE_URL`). Used on recommended_candidate, applications, job_description.
+- **`NewsCard/NewsCard.jsx`** — Headline card → `/news/:id`. Used on dashboard, news.
 
 **Feed**
 
-- **`Posts/Post.jsx`** — Single social post card with author avatar, timestamp, text content, optional image, like count, and comment count. Used by `post.jsx` and `dashboard.jsx`.
-- **`PostCard/PostCard.jsx`** — Alternative social post component that exists in the component tree but is **not currently imported** by any page; reserved for future use.
+- **`Posts/Post.jsx`** — Social post card (author, content, image, like/comment counts). Used by post.jsx and dashboard.jsx.
+- **`PostCard/PostCard.jsx`** — Alternate post card. **Not imported anywhere.**
 
 **Filters**
 
-- **`FilterSection/JobFilter.jsx`** — Multi-field filter panel for job search (location, salary, category, employment type, experience, etc.). Embedded in the Navbar search popover and on `recommended_job`.
-- **`FilterSection/CandidateFilter.jsx`** — Equivalent filter panel for candidate search (name, experience level, degree, major, availability, etc.). Used in Navbar popover and on `recommended_candidate`.
+- **`FilterSection/JobFilter.jsx`** — Job search filter panel (`page` | `popover` variants). Used on recommended_job and Navbar popover.
+- **`FilterSection/CandidateFilter.jsx`** — Candidate filter panel. Used on recommended_candidate and Navbar popover.
 
 **Job Detail**
 
-- **`JobDesription/JobTitle.jsx`** — Renders the job title, company, location, salary, and employment type header block on `job_description`. (Note: folder name is `JobDesription` — one 's' — matching the repo as-is.)
-- **`JobDesription/JobDetails.jsx`** — Renders the tabbed or sectioned body of a job listing (requirements, what we need, about the company, benefits).
+- **`JobDesription/JobTitle.jsx`** — Job header block on job_description and application page. (Folder name has one 's' — repo convention.)
+- **`JobDesription/JobDetails.jsx`** — Requirements, what we need, about company, benefits sections.
+- **`JobDesription/application.jsx`** — Full apply page (lazy-loaded route, not a typical component).
 
 **News Article**
 
-- **`NewsDescription/NewsTitle.jsx`** — Header block for a news article: headline, company, posted-by, and date. Used on `news_information`.
-- **`NewsDescription/NewsDetails.jsx`** — Body section of a news article with featured image and full content text.
+- **`NewsDescription/NewsTitle.jsx`** — Article header on news_information.
+- **`NewsDescription/NewsDetails.jsx`** — Article body + featured image.
 
 **Misc / Helpers**
 
-- **`Contact/Contact.jsx`** — Sticky left-sidebar contact card shown on `dashboard`, `recommended_job`, `recommended_candidate`, and `post`.
-- **`ProfilePictureCard/ProfilePictureCard.jsx`** — Avatar display / upload trigger widget used inside `profile.jsx`.
-- **`Button/Showmore.jsx`** — Toggle button for expanding/collapsing card grids (show more / show less). Used across recommendation pages.
-- **`Button/ApplyJob.jsx`** — Call-to-action apply button rendered on `job_description`.
-- **`Button/Profile_Button.jsx`** — Despite the filename, this file exports `FeatureCardGrid`, a responsive 3-column grid of feature cards. The filename/export mismatch is a known inconsistency.
+- **`Contact/Contact.jsx`** — Sticky sidebar with mock `CONTACTS` list. Used on dashboard, recommended_job, recommended_candidate, post.
+- **`ProfilePictureCard/ProfilePictureCard.jsx`** — Avatar upload/preview widget in profile.jsx.
+- **`Button/Showmore.jsx`** — Show more/less toggle on dashboard.
+- **`Button/ApplyJob.jsx`** — "Apply Now" CTA on job_description → navigates to `/job/:id/application`.
+- **`Button/SaveJob.jsx`** — Save/unsave toggle. Used in JobCard and job_description.
+- **`Button/Profile_Button.jsx`** — Exports `FeatureCardGrid`. **Not imported anywhere** (filename/export mismatch).
 
-## State & Data Flow
+## Services
 
-- **Auth session:** Login sets three `localStorage` keys — `workmate_signed_in` (`'true'`), `workmate_current_user_email`, and `workmate_user_role` — via `setCurrentUserEmail()` and `setCurrentUserRole()` helpers in `userService.js`. Role is inferred from the matched user record (not from a form selector on sign-in). Navbar reads these keys on mount to decide which links and dropdown items to show; sign-out removes all three.
-- **User data:** `fe/src/services/userService.js` exports helpers (`getCurrentUser`, `findUserByEmail`, `getCurrentUserRole`, etc.) that read from `localStorage` and look up records in `fe/src/data/user.json`. Two demo accounts exist: `user@user.com` (candidate) and `employer@employer.com` (employer), both with password `1`.
-- **Page-level state:** Every page manages its own UI state with `useState` — form fields, filter values, show-more toggles, file previews, validation errors. There is no shared global state store.
-- **Mock data:** Job listings, candidates, posts, and news items are defined as `const` arrays inline inside each page file. Comments throughout mark the exact places to replace with API calls (`// BACKEND DEV NOTE`, `// TODO (backend integration)`).
-- **Routing:** `BrowserRouter` in `main.jsx` wraps the entire app; `App.jsx` defines all routes with `React.lazy` + `<Suspense>`. Unknown paths fall through to `<Navigate to="/" replace />`.
+| File | Purpose |
+|---|---|
+| [`userService.js`](frontend/src/services/userService.js) | localStorage helpers: email, role, id, token clear on logout. `findUserByEmail()` / `getCurrentUser()` still read legacy [`user.json`](frontend/src/data/user.json) — not used for login validation. |
+| [`jobStore.js`](frontend/src/services/jobStore.js) | Shared form constants (`EMPLOYMENT_TYPES`, `WORK_ARRANGEMENTS`, etc.). `normalizeApiJob()` adapter maps API job shape → UI shape. Legacy localStorage helpers (`workmate_posted_jobs`) — post flow now uses API directly. |
+| [`applicationStore.js`](frontend/src/services/applicationStore.js) | `submitApplication()`, `fetchUserApplications()`, `hasApplied()` via `/applications` API. Resume metadata in `workmate_saved_resume` localStorage. |
+
+## Utils
+
+| File | Purpose |
+|---|---|
+| [`jobFilters.js`](frontend/src/utils/jobFilters.js) | Pure `matchesJobFilters(job, filters)`. **Dead code** — not imported anywhere. |
+
+## Data files
+
+| File | Purpose |
+|---|---|
+| [`user.json`](frontend/src/data/user.json) | Two legacy demo records (`user@user.com`, `employer@employer.com`). Still loaded by `getCurrentUser()` but login no longer validates against this file. |
 
 ---
 
-# Backend Structure
+# State & Data Flow
 
-Not implemented in this repo — to be updated when an API is added.
+## Auth session
+
+Sign-in flow (`login.jsx`):
+1. `POST /auth/signin` → receive `{ access_token, user }`
+2. Store in localStorage: `workmate_token`, `workmate_current_user_email`, `workmate_user_role`, `workmate_user_id`
+3. Redirect to `/dashboard`
+
+Sign-up flow:
+1. `POST /auth/signup` → `{ message }` (no token returned)
+2. Auto sign-in via `POST /auth/signin`
+3. Same storage + redirect
+
+Sign-out (`Navbar` → `clearCurrentUser()`):
+- Removes token, email, role, id → redirect `/login`
+
+**Protected API calls** send:
+
+```
+Authorization: Bearer <workmate_token>
+```
+
+## localStorage keys
+
+| Key | Set by | Purpose |
+|---|---|---|
+| `workmate_token` | login.jsx | JWT — primary signed-in check (`!!workmate_token` in Navbar) |
+| `workmate_current_user_email` | login.jsx / userService | User email |
+| `workmate_user_role` | login.jsx / userService | `"candidate"` or `"employer"` |
+| `workmate_user_id` | login.jsx / userService | Numeric user ID for API calls |
+| `workmate_saved_resume` | applicationStore.js | CV filename + upload timestamp (client-only metadata) |
+| `workmate_posted_jobs` | jobStore.js | Legacy local job cache (unused in current post flow) |
+
+**Removed:** `workmate_signed_in` — no longer referenced.
+
+## Page-level state
+
+Every page manages its own UI state with `useState` — form fields, filter values, show-more toggles, file previews, validation errors. No shared global state store.
+
+## API adapter pattern
+
+Backend job objects use snake_case fields (`job_type`, `created_at`, etc.). Pages call `normalizeApiJob()` from `jobStore.js` to map to the canonical UI shape expected by `JobCard` and `JobDetails`.
+
+---
+
+# Frontend ↔ Backend Integration Matrix
+
+| Frontend file | Backend endpoints | Status |
+|---|---|---|
+| `login.jsx` | `POST /auth/signin`, `/auth/signup` | Wired |
+| `dashboard.jsx` | `GET /jobs`, `/posts`, `/news` | Wired |
+| `job_description.jsx` | `GET /jobs/:id`, `/saved/*`, `/applications/job/:id` | Wired |
+| `JobDesription/application.jsx` | `GET /jobs/:id`, `POST /applications/` | Wired (cover letter not sent) |
+| `post_job.jsx` | `POST /jobs/` | Wired |
+| `post.jsx` | `GET/POST /posts/` | Wired |
+| `profile.jsx` | `/profiles/*`, `/employer_profiles/*`, upload | Wired |
+| `applications.jsx` | `/saved`, `/applications`, `/jobs` | Partial — employer saved candidates mock |
+| `recommended_job.jsx` | `/candidates/recommended-jobs/:id`, `POST /jobs/search` | Partial — `AI_CHOSEN_JOBS` fallback |
+| `recommended_candidate.jsx` | `/jobs`, `/recommendations/candidates` | Wired (filter client-side) |
+| `news.jsx`, `news_information.jsx` | — | Mock (backend `/news` exists but pages don't call it) |
+| `Navbar.jsx` search | — | Mock UI (should use `POST /jobs/search`) |
+| `Navbar.jsx` notifications | — | Mock (`MOCK_NOTIFICATIONS`; no backend) |
+| `Contact.jsx` | — | Mock contacts list |
+| `landing`, `help`, `settings`, `mynetwork`, `placeholder` | — | Static / placeholder |
+
+---
+
+# Auth Flow
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Login as login.jsx
+  participant API as FastAPI_auth
+  participant LS as localStorage
+  participant Page as ProtectedPage
+
+  User->>Login: email + password
+  Login->>API: POST /auth/signin
+  API-->>Login: access_token + user
+  Login->>LS: workmate_token, email, role, id
+  Login->>User: redirect /dashboard
+  Page->>API: fetch with Bearer token
+```
 
 ---
 
 # Key Conventions
 
-- **Lazy routing:** Every page is loaded with `React.lazy(() => import(...))` in `App.jsx`; a single `<Suspense fallback>` wraps all routes for code splitting.
-- **Component folders:** Each component lives in its own folder matching its name (`Button/ApplyJob.jsx`, `JobCard/JobCard.jsx`). Config files are isolated under `config/` (Vite, Tailwind, ESLint).
-- **Explicit `.jsx` extensions:** Import paths always include `.jsx` (e.g. `import Navbar from '../components/Navbar/Navbar.jsx'`).
-- **Inline mock data:** Mock arrays are named in `SCREAMING_SNAKE_CASE` (e.g. `MOCK_JOBS`, `AI_CHOSEN_JOBS`) and placed at the top of each page file, ready to be swapped for API calls.
-- **Backend handoff markers:** All future API integration points are flagged with `// BACKEND DEV NOTE` or `// TODO (backend integration)` comments; running `grep "BACKEND DEV" fe/src` surfaces every handoff point.
-- **Tailwind + scoped CSS:** Most styling uses Tailwind utility classes directly in JSX. A small number of pages have a companion `.css` file for complex animations or layout that is hard to express in utilities (e.g. `landing.css`, `placeholder.css`).
-- **Role-aware UI:** Components like `Navbar` and `applications.jsx` branch on the `workmate_user_role` value from `localStorage` to show different links, labels, and data depending on whether the user is a candidate or employer.
+- **Lazy routing:** Every page loaded with `React.lazy(() => import(...))` in `App.jsx`; single `<Suspense fallback>` wraps all routes.
+- **Component folders:** Each component in its own folder matching its name. Config isolated under `frontend/config/`.
+- **Explicit `.jsx` extensions:** Import paths always include `.jsx`.
+- **Inline mock data:** Mock arrays named in `SCREAMING_SNAKE_CASE` at top of page files. Remaining mocks flagged for future API wiring.
+- **Backend handoff markers:** `// BACKEND DEV NOTE` comments in Navbar and elsewhere. Grep: `grep -r "BACKEND DEV" frontend/src`.
+- **Tailwind + scoped CSS:** Most styling via Tailwind utilities. Companion `.css` for complex animations (`landing.css`, `placeholder.css`).
+- **Role-aware UI:** Navbar, applications, and other pages branch on `workmate_user_role` from localStorage.
+- **No axios:** All HTTP via native `fetch` with `VITE_API_BASE_URL`.
+- **No `/api` prefix:** Backend routes are root-level (e.g. `/jobs/`, not `/api/jobs/`).
+
+## Dead / legacy code (do not treat as active)
+
+| Item | Location | Notes |
+|---|---|---|
+| `PostCard` | `components/PostCard/` | Not imported |
+| `FeatureCardGrid` | `Button/Profile_Button.jsx` | Not imported |
+| `matchesJobFilters` | `utils/jobFilters.js` | Not imported |
+| `SAMPLE_POSTS` | `pages/post.jsx` | Dead array; feed uses API |
+| `appendPostedJob` import | `pages/post_job.jsx` | Imported but not called |
+| `user.json` login validation | `data/user.json` | Legacy; login uses API |
+| `workmate_posted_jobs` | `jobStore.js` | Legacy localStorage cache |
+| Stale TODO header | `pages/login.jsx` | Says mock auth; already API-based |
 
 ---
 
@@ -133,6 +505,7 @@ flowchart LR
   dashboard --> recCandidates["Recommended Candidates"]
   dashboard --> news["News (/news)"]
   recJobs --> jobDetail["Job Detail (/job/:id)"]
+  jobDetail --> applyPage["Apply (/job/:id/application)"]
   news --> newsDetail["News Article (/news/:id)"]
   dashboard --> userMenu["User Dropdown Menu"]
   userMenu --> profile["Profile (/profile)"]
@@ -142,8 +515,25 @@ flowchart LR
   userMenu --> signOut["Sign Out → /login"]
 ```
 
-- **Visitor:** Lands on `/`, watches the hero video, reads About / Reach Us, then clicks "Join Now" to reach `/login`.
-- **Sign-in:** Selects role (Candidate or Employer), enters demo credentials; on success, `localStorage` is populated and the user is navigated to `/dashboard`.
-- **Candidate flow:** Navbar shows Home, Help, Recommended Jobs, News. They browse job cards, open a job detail, and access profile / applications / posts from the user dropdown.
-- **Employer flow:** Navbar shows Home, Post a Job, Help, Recommended Candidates. They browse candidate cards, post new listings, and review applicants from the user dropdown.
-- **Sign-out:** Clears all `workmate_*` keys from `localStorage` and redirects to `/login`.
+- **Visitor:** Lands on `/`, watches hero video, reads About / Reach Us, clicks "Join Now" → `/login`.
+- **Sign-in / sign-up:** Register or sign in via API; JWT stored in localStorage; redirect to `/dashboard`.
+- **Candidate flow:** Navbar shows Home, Help, Recommended Jobs, Subscription. Browse jobs, open detail, apply via `/job/:id/application`, manage profile/applications/posts from dropdown.
+- **Employer flow:** Navbar shows Home, Post a Job, Help, Recommended Candidates, Subscription. Post listings, browse AI-recommended candidates, review applicants on job detail and applications page.
+- **Sign-out:** Clears all `workmate_*` auth keys and redirects to `/login`.
+
+---
+
+# Known Gaps & Future Work
+
+Priority order for remaining integration:
+
+1. **News pages** — Wire `news.jsx` and `news_information.jsx` to `GET /news/` and `GET /news/:id` (dashboard already uses API).
+2. **Navbar search** — Connect filter popover to `POST /jobs/search` (candidate) or future candidate search endpoint.
+3. **Notifications** — Backend has no `/notifications` routes; Navbar uses `MOCK_NOTIFICATIONS`.
+4. **Employer saved candidates** — Replace mock `savedCandidates` in `applications.jsx` with `/saved` API (candidate saves).
+5. **Apply flow** — Send cover letter to backend; align resume upload with profile upload endpoint.
+6. **Docker backend service** — Add backend to `docker-compose.yml` (fix `./be` → `./backend`).
+7. **Demo user seeding** — Optionally seed `user@user.com` / `employer@employer.com` in `seed_data.py`.
+8. **Backend hardening** — Pydantic request schemas, role enforcement, logout endpoint, refresh tokens, production `SECRET_KEY`.
+9. **Tests** — No test suite exists for frontend or backend.
+10. **Stale docs/comments** — Remove outdated TODO headers in `login.jsx`; update Navbar BACKEND DEV NOTE paths (remove `/api` prefix references).

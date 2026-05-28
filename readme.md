@@ -2,8 +2,9 @@
 
 A job-matching platform connecting candidates with employers through intelligent two-way matching.
 
-**Stack:** React 19 · React Router 7 · Vite 8 · TailwindCSS 4 · ESLint 9  
-**Language:** JavaScript (JSX) · ES2022+
+**Frontend:** React 19 · React Router 7 · Vite 8 · TailwindCSS 4 · ESLint 9  
+**Backend:** FastAPI · SQLAlchemy · SQLite · JWT · sentence-transformers  
+**Language:** JavaScript (JSX) · Python 3
 
 ---
 
@@ -11,56 +12,81 @@ A job-matching platform connecting candidates with employers through intelligent
 
 ```
 Workmate/
-├── fe/          # Frontend — React + Vite application
-└── be/          # Backend — API server (see be/README.md)
+├── frontend/    # React + Vite application
+├── backend/     # FastAPI API server (see backend/README.md)
+└── docker-compose.yml
 ```
+
+For full architecture, integration status, and conventions see [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) 18+
-- npm 9+ (bundled with Node.js)
+- [Node.js](https://nodejs.org) 18+ and npm 9+
+- [Python](https://python.org) 3.10+ with pip
+- (Optional) [Docker Desktop](https://www.docker.com/products/docker-desktop/) for containerized frontend
 
 ---
 
-## Run Frontend Locally
+## Run Locally
+
+### 1. Start the backend (port 8000)
 
 ```bash
-cd fe
+cd backend
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+API docs: `http://127.0.0.1:8000/docs`
+
+### 2. Start the frontend (port 5173)
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173`.
+Ensure `frontend/.env` contains:
+
+```
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+Open `http://localhost:5173`.
+
+### 3. Create an account
+
+The backend does **not** seed demo users. Register via the sign-up tab on `/login`, or use the Swagger UI at `/docs` to create users.
 
 ---
 
-## Run with Docker
+## Run with Docker (frontend only)
 
-Docker guarantees an identical environment on Windows, Mac, and Linux — no local Node/npm required.
-
-**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2)
-
-All commands are run from the **repo root** (`Workmate/`). The single `docker-compose.yml` at the root is designed to grow with the project — `be` and `model` services can be added as new sections without touching the frontend config.
+The backend is not yet in Docker Compose — run it locally via uvicorn alongside the containerized frontend.
 
 ```bash
-# Development (Vite HMR) — run from Workmate/
+# Development (Vite HMR) — from repo root
 docker compose --profile dev up --build
 # → http://localhost:5173
 
-# Production build served by nginx — run from Workmate/
+# Production (nginx) — from repo root
 docker compose --profile prod up --build
 # → http://localhost:8080
 ```
 
-- Pass `--build` on the first run and whenever `fe/package.json` changes.
-- `node_modules` lives only inside the container; the host machine stays clean.
-- Linter inside container: `docker compose --profile dev run --rm frontend-dev npm run lint`
+- Pass `--build` on first run and whenever `frontend/package.json` changes.
+- Lint inside container: `docker compose --profile dev run --rm frontend-dev npm run lint`
 
 ---
 
-## Available Scripts (run from `fe/`)
+## Available Scripts
+
+### Frontend (run from `frontend/`)
 
 | Command | Description |
 |---------|-------------|
@@ -69,129 +95,69 @@ docker compose --profile prod up --build
 | `npm run preview` | Preview production build locally |
 | `npm run lint` | Run ESLint on all source files |
 
----
+### Backend (run from `backend/`)
 
-## Demo Credentials (Mock Auth)
-
-| Role | Email | Password |
-|------|-------|----------|
-| Candidate | `user@user.com` | `1` |
-| Employer | `employer@employer.com` | `1` |
+| Command | Description |
+|---------|-------------|
+| `uvicorn main:app --reload` | Start API server with auto-reload |
+| Open `/docs` | Interactive Swagger UI |
 
 ---
 
-## Website Flow & Architecture
+## Authentication
 
-### Authentication Flow
-1. **Landing Page** (`/login`) - Two-column layout: left branding panel with animated floating bubbles; right panel with sign-in / sign-up tab switcher
-2. **Sign In** - Email + password only; role is inferred from the matched user record (no role selector on sign-in). Includes show/hide password toggle and a "Remember me" checkbox (UI only — not yet functional)
-3. **Sign Up** - Role selector (Candidate / Employer) appears; the name field label adapts ("Full Name" vs "Company Name")
-4. **Session Management** - Auth state stored in `localStorage` via `userService.js` (`workmate_signed_in`, `workmate_current_user_email`, `workmate_user_role`); redirects to `/dashboard` on success (to be replaced with JWT when backend is ready)
+Sign-in and sign-up call the real backend:
 
-### Page Structure
+- `POST /auth/signin` → returns JWT + user object
+- `POST /auth/signup` → creates account, then auto sign-in
 
-| Route | Page | Description | Role Access |
-|-------|------|-------------|-------------|
-| `/` | **Dashboard** | Main page with recommended jobs, hiring news, and social posts | All |
-| `/login` | **Login/Signup** | Landing page with sign-in and sign-up forms | Guest |
-| `/profile` | **Profile** | Manage personal info, education, experience, and resume | All |
-| `/recommended-jobs` | **Recommended Jobs** | Job search with 15+ advanced filters | Candidates |
-| `/recommended-candidates` | **Recommended Candidates** | Candidate discovery (placeholder) | Employers |
-| `/applications` | **Applications** | Saved jobs + applied jobs (candidates) / Posted jobs + saved candidates (employers) | All |
-| `/post` | **Posts Feed** | Social feed for professional networking | All |
-| `/help` | **Help Center** | FAQ accordion + contact information | All |
-| `/settings` | **Settings** | User preferences (placeholder) | All |
-| `/hr-news` | **HR News** | Industry news (placeholder) | All |
-| `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | **Information Pages** | Static content pages (placeholders) | All |
+Session stored in `localStorage`:
 
-### Key Features
+| Key | Purpose |
+|-----|---------|
+| `workmate_token` | JWT (primary auth check) |
+| `workmate_current_user_email` | User email |
+| `workmate_user_role` | `candidate` or `employer` |
+| `workmate_user_id` | Numeric user ID for API calls |
 
-#### For Candidates
-- **Job Discovery**: Browse AI-recommended jobs, jobs based on viewing history, and related roles
-- **Advanced Filtering**: Filter by location, salary, job category, industry, employment type, work arrangement, certifications, languages, degree requirements, experience level, and role level
-- **Application Tracking**: View saved jobs and track applied positions
-- **Profile Management**: Complete profile with education, work experience, and resume upload
-
-#### For Employers
-- **Candidate Discovery**: Browse recommended candidates (planned)
-- **Job Posting**: Post job openings (via `/post` page)
-- **Applicant Management**: View applicants and save promising candidates
-- **Company Profile**: Manage company information and branding
-
-### Frontend Component Architecture
-
-```
-fe/src/
-├── pages/              # Page components (route-level)
-│   ├── login.jsx       # Authentication landing page
-│   ├── dashboard.jsx   # Main dashboard with recommendations
-│   ├── profile.jsx     # User profile management
-│   ├── recommended_job.jsx    # Job search with filters
-│   ├── applications.jsx  # Saved jobs/applicants management
-│   ├── post.jsx        # Social posts feed
-│   ├── help.jsx        # Help center with FAQ
-│   ├── settings.jsx    # Settings placeholder
-│   └── placeholder.jsx # Generic placeholder for unimplemented pages
-├── components/         # Reusable UI components
-│   ├── Navbar/         # Top navigation with search, notifications, user dropdown
-│   ├── Footer/         # Site footer with links
-│   ├── JobCard/        # Job listing card
-│   ├── CandidateCard/  # Candidate card for employers
-│   ├── NewsCard/       # Hiring news card
-│   ├── PostCard/       # Social post card
-│   ├── Contact/        # Sticky sidebar contact list
-│   └── Button/         # Reusable button components
-├── services/           # API service layer
-│   └── userService.js  # User data management (mock → real API)
-├── data/               # Mock data
-│   └── user.json       # Demo user accounts
-└── App.jsx             # Route definitions with lazy loading
-```
-
-### Data Flow
-
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Login     │────▶│ localStorage │────▶│   Navbar    │
-│   Page      │     │   (email,    │     │  (auth      │
-│             │     │   role)      │     │   state)    │
-└─────────────┘     └──────────────┘     └─────────────┘
-                                                │
-                                                ▼
-                                       ┌─────────────┐
-                                       │ userService │
-                                       │   (mock)    │
-                                       │             │
-                                       │ • getCurrent│
-                                       │   User()    │
-                                       │ • findUser  │
-                                       │   ByEmail() │
-                                       └─────────────┘
-```
+Protected requests send `Authorization: Bearer <token>`.
 
 ---
 
-## Backend Integration
+## Integration Status (summary)
 
-The frontend currently uses **mock authentication** with localStorage and static JSON data. See `be/README.md` for:
-- Required API endpoints specification
-- Complete data models
-- Authentication flow (JWT-based)
-- Migration guide from mock to real backend
-- Storage key recommendations
+| Area | Status |
+|------|--------|
+| Auth, jobs, applications, saved jobs | API wired |
+| Profiles + resume upload | API wired |
+| Posts feed | API wired |
+| AI recommendations (jobs + candidates) | API wired |
+| Dashboard news ticker | API wired |
+| News pages (`/news`, `/news/:id`) | Still mock |
+| Navbar search & notifications | Still mock |
+| Settings, My Network, placeholder routes | Coming soon |
 
-### Quick Backend Notes
+See [`CLAUDE.md`](CLAUDE.md) for the full integration matrix and [`backend/README.md`](backend/README.md) for API endpoint details.
 
-**Current Mock Storage Keys:**
-- `workmate_signed_in` - Boolean auth flag
-- `workmate_current_user_email` - Current user identifier
-- `workmate_user_role` - User role (candidate/employer)
+---
 
-**Target Backend Storage:**
-- `workmate_token` - JWT token for authenticated requests
+## Page Routes
 
-**Files to Modify When Adding Backend:**
-1. `fe/src/services/userService.js` - Replace mock functions with API calls
-2. `fe/src/pages/login.jsx` - Replace hardcoded credential check with API login
-3. `fe/src/pages/profile.jsx` - Connect save profile to API endpoint
-4. `fe/src/components/Navbar/Navbar.jsx` - Update auth state check
+| Route | Page | Role |
+|-------|------|------|
+| `/` | Landing | Guest |
+| `/login` | Sign in / Sign up | Guest |
+| `/dashboard` | Main home | Both |
+| `/recommended-jobs` | Job recommendations | Candidate |
+| `/recommended-candidates` | Candidate recommendations | Employer |
+| `/job/:id` | Job detail | Both |
+| `/job/:id/application` | Apply for job | Candidate |
+| `/post-job` | Create job listing | Employer |
+| `/applications` | Saved/applied jobs or posted jobs | Both |
+| `/profile` | Profile editor | Both |
+| `/post` | Social feed | Both |
+| `/news` | News feed | Both |
+| `/news/:id` | News article | Both |
+| `/help` | Help center | Both |
+| `/settings`, `/mynetwork` | Coming soon | Both |
+| `/hr-news`, `/subscription`, `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | Placeholders | Both |
