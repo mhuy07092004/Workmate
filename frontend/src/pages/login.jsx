@@ -8,6 +8,7 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import SwitchButton from '../components/Button/switch_button.jsx'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -275,64 +276,28 @@ function Login() {
           <h2 className="m-0 text-center text-3xl">Welcome Back</h2>
           <p className="my-3 text-center text-slate-500">Sign in to your account or create a new one</p>
 
-          <div className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative" role="tablist" aria-label="Authentication tabs">
-            <div
-              className="absolute top-1 bottom-1 bg-white rounded-full shadow-[0_2px_12px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out"
-              style={{
-                width: 'calc(50% - 6px)',
-                left: activeTab === 'signin' ? '4px' : 'calc(50% + 2px)',
-              }}
-            />
-            <button
-              type="button"
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${activeTab === 'signin' ? 'text-slate-900' : 'text-slate-700 hover:text-slate-900'}`}
-              onClick={() => handleTabChange('signin')}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${activeTab === 'signup' ? 'text-slate-900' : 'text-slate-700 hover:text-slate-900'}`}
-              onClick={() => handleTabChange('signup')}
-            >
-              Sign Up
-            </button>
-          </div>
+          <SwitchButton
+            options={[
+              { value: 'signin', label: 'Sign In' },
+              { value: 'signup', label: 'Sign Up' },
+            ]}
+            value={activeTab}
+            onChange={handleTabChange}
+            ariaLabel="Authentication tabs"
+          />
 
           {activeTab === 'signup' ? (
             <>
               <p className="mt-4 mb-2.5 text-slate-700 font-bold"></p>
-              <div
-                className="rounded-full bg-gray-200 p-1 grid grid-cols-2 gap-1.5 relative"
-                role="radiogroup"
-                aria-label="Account type"
-              >
-                <div
-                  className="absolute top-1 bottom-1 bg-white rounded-full shadow-[0_2px_12px_rgba(15,23,42,0.08)] transition-all duration-300 ease-out pointer-events-none"
-                  style={{
-                    width: 'calc(50% - 6px)',
-                    left: selectedRole === 'candidate' ? '4px' : 'calc(50% + 2px)',
-                  }}
-                />
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={selectedRole === 'candidate'}
-                  className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'candidate' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-                  onClick={() => handleRoleChange('candidate')}
-                >
-                  Candidate
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={selectedRole === 'employer'}
-                  className={`relative z-10 border-0 rounded-full text-base font-bold py-2.5 bg-transparent cursor-pointer transition-colors duration-300 ${selectedRole === 'employer' ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-                  onClick={() => handleRoleChange('employer')}
-                >
-                  Employer
-                </button>
-              </div>
+              <SwitchButton
+                options={[
+                  { value: 'candidate', label: 'Candidate' },
+                  { value: 'employer', label: 'Employer' },
+                ]}
+                value={selectedRole}
+                onChange={handleRoleChange}
+                ariaLabel="Account type"
+              />
             </>
           ) : null}
 

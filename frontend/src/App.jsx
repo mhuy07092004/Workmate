@@ -37,6 +37,7 @@ const JobApplication = lazy(() => import('./components/JobDesription/application
 const MyNetwork = lazy(() => import('./pages/mynetwork.jsx'))
 const NewsInformation = lazy(() => import('./pages/news_information.jsx'))
 const PostJob = lazy(() => import('./pages/post_job.jsx'))
+const Subscription = lazy(() => import('./pages/subscription.jsx'))
 
 function App() {
   return (
@@ -46,7 +47,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
-        <Route path="/subscription" element={<PlaceholderPage />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="/help" element={<Help />} />
         <Route path="/recommended-candidates" element={<RecommendedCandidate />} />
         <Route path="/recommended-jobs" element={<RecommendedJob />} />
