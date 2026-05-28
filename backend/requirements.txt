@@ -11,3 +11,7 @@ numpy
 PyPDF2
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.21.1
+pytest
+pytest-mock
+requests
+selenium
