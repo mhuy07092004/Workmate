@@ -38,6 +38,7 @@ const MyNetwork = lazy(() => import('./pages/mynetwork.jsx'))
 const NewsInformation = lazy(() => import('./pages/news_information.jsx'))
 const PostJob = lazy(() => import('./pages/post_job.jsx'))
 const Subscription = lazy(() => import('./pages/subscription.jsx'))
+const Payment = lazy(() => import('./pages/payment.jsx'))
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/hr-news" element={<PlaceholderPage />} />
         <Route path="/subscription" element={<Subscription />} />
+        <Route path="/payment" element={<Payment />} />
         <Route path="/help" element={<Help />} />
         <Route path="/recommended-candidates" element={<RecommendedCandidate />} />
         <Route path="/recommended-jobs" element={<RecommendedJob />} />

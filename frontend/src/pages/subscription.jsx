@@ -7,6 +7,7 @@
  * - Responsive layout with Navbar and Footer
  */
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import SwitchButton from '../components/Button/switch_button.jsx'
@@ -39,6 +40,7 @@ const PREMIUM_BENEFITS = [
 
 function Subscription() {
   const [billingPeriod, setBillingPeriod] = useState('monthly')
+  const navigate = useNavigate()
 
   const isAnnually = billingPeriod === 'annually'
   const premiumPrice = isAnnually ? '$79' : '$9.99'
@@ -95,8 +97,7 @@ function Subscription() {
               isCurrentPlan={false}
               isPopular={true}
               onAction={() => {
-                // TODO: Implement upgrade flow
-                console.log('Upgrade to Premium clicked')
+                navigate(`/payment?plan=${billingPeriod}`)
               }}
             />
           </div>
