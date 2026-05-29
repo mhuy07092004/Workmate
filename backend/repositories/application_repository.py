@@ -16,7 +16,14 @@ class ApplicationRepository:
     
     def get_by_job(self, job_id: int) -> list[Application]:
         return self.db.execute(select(Application).where(Application.job_id == job_id)).scalars().all()
-    
+
+    def get_application_by_user_and_job(self, user_id: int, job_id: int) -> Application:
+        return self.db.execute(
+            select(Application).where(
+                (Application.user_id == user_id) & (Application.job_id == job_id)
+            )
+        ).scalars().first()
+
     def save(self, application_data: dict) -> Application:
         application = Application(**application_data)
         self.db.add(application)

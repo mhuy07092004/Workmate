@@ -2,19 +2,55 @@
  * CandidateCard.jsx — Individual candidate card component for employers
  *
  * Displays candidate information including profile picture, full name, location,
- * and resume link (if available).
+ * resume link, and status management for employers.
  */
+import { useState } from 'react'
+import { updateApplicationStatus, getStatusColor, getStatusLabel } from '../../services/applicationStatusService.js'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-function CandidateCard({ candidate }) {
-  // Safely normalize resume URL (handles /uploads or uploads\ formats)
+function CandidateCard({
+  candidate,
+  isEmployerView = false,
+  onStatusChange = null
+}) {
+  const [status, setStatus] = useState(candidate.application_status || candidate.status || null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Safely normalize resume URL
   const resumeUrl = candidate.resume_url
     ? `${API_BASE_URL}/${candidate.resume_url.replace(/^\/?uploads\//, 'uploads/')}`
     : null
 
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value
+
+    if (!candidate.application_id) {
+      setError('Cannot update status: application not found')
+      return
+    }
+
+    try {
+      setIsUpdating(true)
+      setError(null)
+
+      await updateApplicationStatus(candidate.application_id, newStatus)
+      setStatus(newStatus)
+
+      if (onStatusChange) {
+        onStatusChange(candidate.id || candidate.userId, newStatus)
+      }
+    } catch (err) {
+      setError(err.message)
+      console.error('Failed to update status:', err)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
-    <article className="bg-white rounded-[14px] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)] hover:shadow-[0_4px_20px_rgba(15,23,42,0.12)] transition-shadow cursor-pointer">
+    <article className="bg-white rounded-[14px] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.07)] hover:shadow-[0_4px_20px_rgba(15,23,42,0.12)] transition-shadow">
 
       {/* Profile + Info */}
       <div className="flex flex-col items-center text-center">
@@ -57,6 +93,52 @@ function CandidateCard({ candidate }) {
         >
           View Resume
         </a>
+      )}
+
+      {/* Status Section for Employers */}
+      {isEmployerView && candidate.application_id && (
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <label className="block text-xs font-semibold text-slate-700 mb-2">
+            Application Status
+          </label>
+
+          {error && (
+            <div className="mb-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </div>
+          )}
+
+          <select
+            value={status || ''}
+            onChange={handleStatusChange}
+            disabled={isUpdating}
+            className={`w-full px-3 py-2 text-sm rounded-lg border border-slate-300 
+              focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none
+              ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${getStatusColor(status)}`}
+          >
+            <option value="">No status</option>
+            <option value="applied">Applied</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="shortlist">Shortlisted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+
+          {status && (
+            <div className={`mt-2 px-2 py-1 rounded text-xs font-medium border ${getStatusColor(status)} text-center`}>
+              {getStatusLabel(status)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Status Badge for Candidates */}
+      {!isEmployerView && status && (
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <div className={`px-3 py-2 rounded-lg text-sm font-medium text-center border ${getStatusColor(status)}`}>
+            Status: {getStatusLabel(status)}
+          </div>
+        </div>
       )}
     </article>
   )

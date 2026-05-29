@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from database import init_db
-from routes import auth, users, jobs, news, posts, applications, candidates, profiles, saved
+from routes import auth, users, jobs, news, posts, applications, candidates, profiles, saved, subscriptions
 from seed_data import seed_database
 from database import SessionLocal
 from routes import employer_profiles, recommendations
@@ -48,3 +48,4 @@ app.include_router(news.router, prefix="/news")
 app.include_router(employer_profiles.router, prefix="/employer_profiles")
 app.include_router(recommendations.router, prefix="/recommendations")
 app.include_router(candidates.router, prefix="/candidates")
+app.include_router(subscriptions.router, prefix="/subscriptions")

@@ -84,32 +84,64 @@ class ProfileService:
             return False
 
     def get_profile(self, user_id: int):
+        """Get profile by user ID"""
         profile = self.profile_repo.get_by_user_id(user_id)
         if not profile:
             return {"error": "Profile not found."}, 404
-        return {"profile": profile}, 200
+        return {"profile": self._serialize_profile(profile)}, 200
 
     def create_profile(self, profile_data: dict):
+        """Create a new profile"""
         self._populate_resume_embedding(profile_data)
         profile = self.profile_repo.save(profile_data)
-        return {"message": "Profile created successfully.", "profile": profile}, 201
+        return {"message": "Profile created successfully.", "profile": self._serialize_profile(profile)}, 201
 
     def update_profile(self, user_id: int, profile_data: dict):
+        """Update an existing profile"""
         profile = self.profile_repo.get_by_user_id(user_id)
         if not profile:
             return {"error": "Profile not found"}, 404
-
-        if "resume_url" not in profile_data and profile.resume_url:
-            profile_data["resume_url"] = profile.resume_url
-
-        self._populate_resume_embedding(profile_data)
-        profile = self.profile_repo.update(user_id, profile_data)
-        if not profile:
-            return {"error": "Profile not found"}, 404
-        return {"message": "Profile updated successfully.", "profile": profile}, 200
+        
+        # Don't allow modifying user_id
+        profile_data.pop("user_id", None)
+        
+        # If resume file info is being updated, regenerate embedding
+        if "resume_url" in profile_data:
+            self._populate_resume_embedding(profile_data)
+        
+        updated_profile = self.profile_repo.update(user_id, profile_data)
+        return {"message": "Profile updated successfully.", "profile": self._serialize_profile(updated_profile)}, 200
 
     def delete_profile(self, user_id: int):
+        """Delete a profile"""
         profile = self.profile_repo.delete_by_user_id(user_id)
         if not profile:
             return {"error": "Profile not found"}, 404
         return {"message": "Profile deleted successfully."}, 200
+
+    def _serialize_profile(self, profile):
+        """Convert Profile model to dict for JSON serialization"""
+        if not profile:
+            return None
+        
+        return {
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "full_name": profile.full_name,
+            "email": profile.email,
+            "phone": profile.phone,
+            "education_level": profile.education_level,
+            "major": profile.major,
+            "school": profile.school,
+            "about_you": profile.about_you,
+            "skills": profile.skills or [],  # NEW: 2nd submission
+            "preferred_working_mode": profile.preferred_working_mode or "Hybrid",  # NEW: 2nd submission
+            "preferred_location": profile.preferred_location,  # NEW: 2nd submission
+            "profile_picture_url": profile.profile_picture_url,
+            "resume_url": profile.resume_url,
+            "resume_text": profile.resume_text,
+            "resume_embedding": profile.resume_embedding,
+            "experiences": profile.experiences or [],
+            "created_at": profile.created_at.isoformat() if profile.created_at else None,
+            "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
+        }
