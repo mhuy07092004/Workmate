@@ -27,6 +27,26 @@ def get_recommended_jobs(user_id: int, limit: int = 10, db = Depends(get_db)):
     result, status_code = candidate_service.get_recommended_jobs(user_id, limit)
     return result
 
+@router.post("/search")
+def search_candidates(filters: dict, db = Depends(get_db)):
+    """
+    Search candidates by keyword and filters
+    
+    Request body:
+    {
+        "keyword": "python developer",  # Searches name, resume, profile
+        "location": "Sydney",
+        "degree_type": "Bachelor",
+        "major": "Computer Science"
+    }
+    
+    Returns:
+        List of candidates matching criteria
+    """
+    candidate_service = CandidateService(db)
+    result, status_code = candidate_service.search_candidates(filters)
+    return result
+
 @router.post("/update-resume-embedding/{user_id}")
 def update_resume_embedding(user_id: int, resume_data: dict, db = Depends(get_db)):
     """

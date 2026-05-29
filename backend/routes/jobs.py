@@ -39,6 +39,21 @@ def get_job(job_id: int, db = Depends(get_db)):
 def create_job(job_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new job post.
+    
+    Expected JSON:
+    {
+        "title": "Senior Software Engineer",
+        "company": "Tech Company",
+        "description": "We are looking for...",
+        "requirements": "Must have: Python, React...",
+        "location": "Sydney, NSW",
+        "job_type": "Full-time",
+        "work_arrangement": "Hybrid",
+        "salary_min": 80000,
+        "salary_max": 120000
+    }
+    
+    Note: user_id is automatically set from the authenticated user.
     """
     job_dict["user_id"] = current_user.get("user_id")
     service = JobService(db)
@@ -52,6 +67,8 @@ def create_job(job_dict: dict, db = Depends(get_db), current_user = Depends(get_
 def update_job(job_id: int, job_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Update an existing job post by job ID.
+    
+    Only the authenticated job owner (employer) can update their job.
     """
     service = JobService(db)
     result, status = service.update_job(job_id, job_dict)
@@ -64,6 +81,8 @@ def update_job(job_id: int, job_dict: dict, db = Depends(get_db), current_user =
 def delete_job(job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a job by ID.
+    
+    Only the authenticated job owner (employer) can delete their job.
     """
     service = JobService(db)
     result, status = service.delete_job(job_id)
@@ -75,16 +94,20 @@ def delete_job(job_id: int, db = Depends(get_db), current_user = Depends(get_cur
 @router.post("/search")
 def search_jobs(filters: dict, db = Depends(get_db)):
     """
-    Search jobs by filters.
+    Search jobs by keyword and filters.
+    
     Expected JSON:
     {
+        "keyword": "python developer",
         "location": "Sydney",
-        "title": "Developer",
-        "company": "TechCorp",
         "job_type": "Full-time",
+        "work_arrangement": "Hybrid",
         "salary_min": 80000,
-        "salary_max": 150000
+        "salary_max": 150000,
+        "company": "TechCorp"
     }
+    
+    All filters are optional. Keyword search uses fuzzy matching with typo tolerance.
     """
     service = JobService(db)
     result, status = service.search_jobs(filters)

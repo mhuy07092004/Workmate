@@ -2,6 +2,7 @@ from repositories.candidate_repository import CandidateRepository
 from repositories.job_repository import JobRepository
 from utils.embeddings import generate_embedding, calculate_cosine_similarity
 from fastapi import HTTPException
+from fuzzywuzzy import fuzz
 
 class CandidateService:
     def __init__(self, db):
@@ -48,33 +49,28 @@ class CandidateService:
                     "salary_min": job.salary_min,
                     "salary_max": job.salary_max,
                     "similarity_score": similarity_score,
-                    "created_at": job.created_at.isoformat() if job.created_at else None
+                    "user_id": job.user_id,
+                    "created_at": job.created_at,
                 })
             
-            # Sort by similarity score (highest first)
+            # Sort by similarity score (highest first) and limit
             job_scores.sort(key=lambda x: x["similarity_score"], reverse=True)
+            job_scores = job_scores[:limit]
             
-            # Return top N jobs
-            top_jobs = job_scores[:limit]
+            return {"jobs": job_scores}, 200
             
-            return {
-                "jobs": top_jobs,
-                "total_recommendations": len(top_jobs),
-                "message": "Recommendations generated based on resume similarity"
-            }, 200
-        
-        except HTTPException as e:
-            raise e
+        except HTTPException:
+            raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def update_candidate_resume_embedding(self, user_id: int, resume_text: str):
         """
-        Update candidate's resume text and generate/store embedding
+        Update candidate's resume text and regenerate embedding
         
         Args:
             user_id: The candidate's user ID
-            resume_text: The resume content as text
+            resume_text: The resume text to embed
         
         Returns:
             Updated candidate profile
@@ -84,53 +80,82 @@ class CandidateService:
             embedding = generate_embedding(resume_text)
             
             if not embedding:
-                raise HTTPException(status_code=400, detail="Could not generate embedding from resume text")
+                raise HTTPException(status_code=400, detail="Failed to generate embedding")
             
-            # Update resume text
+            # Update resume text and embedding
             self.candidate_repo.update_resume_text(user_id, resume_text)
-            
-            # Update embedding
             candidate = self.candidate_repo.update_resume_embedding(user_id, embedding)
             
             return {"message": "Resume embedding updated successfully", "candidate": candidate}, 200
-        
-        except HTTPException as e:
-            raise e
+            
+        except HTTPException:
+            raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error updating resume embedding: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def batch_generate_job_embeddings(self, jobs_data: list):
         """
-        Generate embeddings for multiple jobs and store them
+        Generate embeddings for multiple jobs (batch operation)
         
         Args:
-            jobs_data: List of job dictionaries with id, description, requirements
+            jobs_data: List of job dicts with id, description, requirements
         
         Returns:
-            Number of jobs updated
+            Count of updated jobs
         """
         try:
-            updated_count = 0
-            
+            count = 0
             for job_data in jobs_data:
                 job_id = job_data.get("id")
                 description = job_data.get("description", "")
                 requirements = job_data.get("requirements", "")
                 
-                # Combine description and requirements for embedding
                 combined_text = f"{description} {requirements}"
-                
-                # Generate embedding
                 embedding = generate_embedding(combined_text)
                 
                 if embedding:
-                    job = self.job_repo.get_by_id(job_id)
-                    if job:
-                        job.job_embedding = embedding
-                        self.job_repo.db.commit()
-                        updated_count += 1
+                    self.job_repo.update(job_id, {"job_embedding": embedding})
+                    count += 1
             
-            return {"message": f"Updated embeddings for {updated_count} jobs"}, 200
-        
+            return {"message": f"Updated {count} job embeddings", "count": count}, 200
+            
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error batch generating embeddings: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def search_candidates(self, filters: dict):
+        """
+        Search candidates by keyword (in profile/resume) and apply filters.
+        
+        Filters:
+          - keyword: Searches name, skills, experience, education (with fuzzy matching)
+          - location: Exact filter
+          - experience_level: Range filter
+          - degree_type: Exact filter
+          - major: Substring filter
+        
+        Returns:
+            List of candidates matching criteria, sorted by fuzzy match score
+        """
+        candidates = self.candidate_repo.search(filters)
+
+        # Handle fuzzy keyword search
+        if filters.get("keyword"):
+            search_keyword = filters["keyword"].lower()
+            
+            # Filter by fuzzy matching on candidate profile content
+            filtered_candidates = []
+            for candidate in candidates:
+                # Combine all searchable candidate fields
+                candidate_content = f"{candidate.full_name or ''} {candidate.resume_text or ''} {candidate.about_you or ''}".lower()
+                
+                # Use fuzzy matching with 70% threshold for typo tolerance
+                match_score = fuzz.token_set_ratio(search_keyword, candidate_content)
+                
+                if match_score >= 70:
+                    filtered_candidates.append((candidate, match_score))
+            
+            # Sort by match score (highest first)
+            filtered_candidates.sort(key=lambda x: x[1], reverse=True)
+            candidates = [cand for cand, score in filtered_candidates]
+
+        return {"candidates": candidates}, 200

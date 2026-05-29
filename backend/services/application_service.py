@@ -56,11 +56,29 @@ class ApplicationService:
         application = self.application_repo.save(application_data)
         return {"message": "Application submitted successfully", "application": application}, 201
     
-    def update_application_status(self, id: int, status: str):
-        application = self.application_repo.update_status(id, status)
+    def update_application_status(self, id: int, status: str, current_user: dict):
+        """
+        Update application status with authorization check.
+        Only the employer who owns the job can update status.
+        """
+        # Get the application
+        application = self.application_repo.get_by_id(id)
         if not application:
             return {"error": "Application not found"}, 404
-        return {"message": "Application status updated", "application": application}, 200
+        
+        # Get the job associated with this application
+        job = self.job_repo.get_by_id(application.job_id)
+        if not job:
+            return {"error": "Job not found"}, 404
+        
+        # Check authorization - only employer who owns the job can update
+        if current_user.get("role") != "employer" or job.user_id != current_user.get("user_id"):
+            return {"error": "Forbidden - you do not own this job"}, 403
+        
+        # Update the status
+        updated_application = self.application_repo.update_status(id, status)
+        return {"message": "Application status updated", "application": updated_application}, 200
+
     
     def delete_application(self, id: int):
         application = self.application_repo.delete(id)

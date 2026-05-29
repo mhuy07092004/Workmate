@@ -235,7 +235,7 @@ function JobDescription() {
         {saveMessage && (
           <div className="mt-4 text-sm text-slate-700">{saveMessage}</div>
         )}
-
+{/* 
         {isOwnerView && (
           <section className="mt-8">
             <h2 className="text-[1.3rem] font-semibold text-slate-900 mb-1">
@@ -251,6 +251,44 @@ function JobDescription() {
                 <CandidateCard key={c.user_id} candidate={c} />
               ))}
             </div>
+          </section>
+        )} */}
+
+        {isOwnerView && (
+          <section className="mt-8">
+            <h2 className="text-[1.3rem] font-semibold text-slate-900 mb-1">
+              Candidates Applied
+            </h2>
+
+            <p className="text-slate-600 mb-5">
+              Applicants who have expressed interest in this role
+            </p>
+
+            {applicants.length === 0 ? (
+              <div className="text-slate-500 text-center py-8">
+                No applicants yet
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {applicants.map((c) => (
+                  <CandidateCard
+                    key={c.user_id}
+                    candidate={c}
+                    isEmployerView={true}
+                    onStatusChange={(candidateId, newStatus) => {
+                      // Update local state if needed
+                      setApplicants(prev =>
+                        prev.map(app =>
+                          app.user_id === candidateId
+                            ? { ...app, status: newStatus }
+                            : app
+                        )
+                      )
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 

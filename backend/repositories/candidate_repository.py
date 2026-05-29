@@ -1,4 +1,5 @@
 from models.profile import Profile
+from models.user import User
 from sqlalchemy.sql import select
 from fastapi import HTTPException
 
@@ -42,3 +43,32 @@ class CandidateRepository:
         self.db.commit()
         self.db.refresh(candidate)
         return candidate
+
+    def search(self, filters: dict) -> list:
+        """
+        Search candidates by filters (NOT keyword - that's done in service with fuzzy matching)
+        
+        Filters applied:
+          - location: Substring match
+          - experience_level: Exact match (if implemented in Profile model)
+          - degree_type: Exact match
+          - major: Substring match
+        """
+        query = select(Profile)
+        
+        # Apply filters (keyword search is done in service with fuzzy matching)
+        if filters.get("location"):
+            query = query.where(Profile.location.ilike(f"%{filters['location']}%"))
+        
+        if filters.get("degree_type"):
+            query = query.where(Profile.education_level == filters['degree_type'])
+        
+        if filters.get("major"):
+            query = query.where(Profile.major.ilike(f"%{filters['major']}%"))
+        
+        return self.db.execute(query).scalars().all()
+
+    def get_all(self) -> list:
+        """Get all candidates"""
+        query = select(Profile)
+        return self.db.execute(query).scalars().all()

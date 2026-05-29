@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from database import SessionLocal
 from services.application_service import ApplicationService
+from services.job_service import JobService
 from services.auth_service import get_current_user
 
 def get_db():
@@ -11,6 +12,7 @@ def get_db():
         db.close()
 
 router = APIRouter(tags=["application"])
+ALLOWED_STATUSES = ["applied", "reviewing", "shortlist", "rejected"]
 
 
 @router.get("/user/{user_id}")
@@ -52,18 +54,36 @@ def apply_to_job(application_data: dict, db = Depends(get_db), current_user = De
 
 
 @router.put("/{application_id}/status")
-def update_application_status(application_id: int, status_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
+def update_application_status(
+    application_id: int, 
+    status_data: dict, 
+    db = Depends(get_db), 
+    current_user = Depends(get_current_user)
+):
     """
     Update application status.
+    Only the employer who owns the job can update the status.
     Expected JSON:
     {
-        "status": "accepted" or "rejected"
+        "status": "applied" | "reviewing" | "shortlist" | "rejected"
     }
     """
+    new_status = status_data.get("status")
+    
+    # Validate status
+    if new_status not in ALLOWED_STATUSES:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid status. Allowed values: {', '.join(ALLOWED_STATUSES)}"
+        )
+    
+    # Call service with current_user for authorization
     service = ApplicationService(db)
-    result, status = service.update_application_status(application_id, status_data.get("status"))
-    if status != 200:
-        raise HTTPException(status_code=status, detail=result.get("error"))
+    result, status_code = service.update_application_status(application_id, new_status, current_user)
+    
+    if status_code != 200:
+        raise HTTPException(status_code=status_code, detail=result.get("error"))
+    
     return result
 
 

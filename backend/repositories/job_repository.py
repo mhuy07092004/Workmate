@@ -47,19 +47,36 @@ class JobRepository:
         return job
 
     def search(self, filters: dict) -> list[Job]:
-        query = select(Job)
+        """
+        Search jobs by filters (NOT keyword - that's done in service with fuzzy matching)
         
+        Filters applied:
+        - location: Substring match
+        - job_type: Exact match
+        - salary_min/salary_max: Overlap match (job range overlaps search range)
+        - company: Substring match
+        """
+        query = select(Job)
+
         if filters.get("location"):
             query = query.where(Job.location.ilike(f"%{filters['location']}%"))
-        # if filters.get("title"):
-        #     query = query.where(Job.title.ilike(f"%{filters['title']}%"))
-        if filters.get("company"):
-            query = query.where(Job.company.ilike(f"%{filters['company']}%"))
+
         if filters.get("job_type"):
             query = query.where(Job.job_type == filters['job_type'])
-        if filters.get("salary_min"):
-            query = query.where(Job.salary_min >= filters['salary_min'])
-        if filters.get("salary_max"):
-            query = query.where(Job.salary_max <= filters['salary_max'])
-        
+
+        # Overlap condition: job's range overlaps with the searched range.
+        # A job overlaps if its max >= search_min AND its min <= search_max.
+        if filters.get("salary_min") and filters.get("salary_max"):
+            query = query.where(
+                (Job.salary_max >= filters["salary_min"]) &
+                (Job.salary_min <= filters["salary_max"])
+            )
+        elif filters.get("salary_min"):
+            query = query.where(Job.salary_max >= filters["salary_min"])
+        elif filters.get("salary_max"):
+            query = query.where(Job.salary_min <= filters["salary_max"])
+
+        if filters.get("company"):
+            query = query.where(Job.company.ilike(f"%{filters['company']}%"))
+
         return self.db.execute(query).scalars().all()

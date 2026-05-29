@@ -15,10 +15,17 @@ class Profile(Base):
     major = Column(String, nullable=True)
     school = Column(String, nullable=True)
     about_you = Column(Text, nullable=True)
+    
+    # 2ND SUBMISSION: New fields for enhanced profiles
+    skills = Column(JSON, nullable=True)  # Array of skill strings
+    preferred_working_mode = Column(String, nullable=True)  # Remote, Hybrid, On-site
+    preferred_location = Column(String, nullable=True)  # Preferred work location
+    
     profile_picture_url = Column(String, nullable=True)
     resume_url = Column(String, nullable=True)
-    resume_text = Column(Text, nullable=True)  # New: Plain text of resume
-    resume_embedding = Column(JSON, nullable=True)  # New: Embedding of resume
-    experiences = Column(JSON, nullable=True)
+    resume_text = Column(Text, nullable=True)  # Plain text of resume
+    resume_embedding = Column(JSON, nullable=True)  # Embedding of resume
+    experiences = Column(JSON, nullable=True)  # Array of work experiences
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

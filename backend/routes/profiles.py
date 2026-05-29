@@ -20,16 +20,16 @@ os.makedirs(f"{UPLOAD_DIR}/profiles", exist_ok=True)
 
 
 @router.get("/{user_id}")
-def get_profile(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+def get_profile(user_id: int, db = Depends(get_db)):
     """
     Retrieve a profile by user ID.
-    Requires an authenticated user via JWT.
     """
     service = ProfileService(db)
     result, status = service.get_profile(user_id)
     if status != 200:
         raise HTTPException(status_code=status, detail=result.get("error"))
     return result
+
 
 @router.post("/upload/{user_id}")
 async def upload_files(user_id: int, 
@@ -70,10 +70,12 @@ async def upload_files(user_id: int,
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
+
 @router.post("/")
 def create_profile(profile_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new profile for the authenticated user.
+    
     Expected JSON:
     {
         "user_id": 1,
@@ -84,8 +86,9 @@ def create_profile(profile_data: dict, db = Depends(get_db), current_user = Depe
         "major": "Computer Science",
         "school": "Tech University",
         "about_you": "My profile summary...",
-        "profile_picture_url": "https://example.com/avatar.jpg",
-        "resume_url": "https://example.com/resume.pdf",
+        "skills": ["Python", "React", "SQL"],
+        "preferred_working_mode": "Hybrid",
+        "preferred_location": "Sydney",
         "experiences": [
             {
                 "position": "Software Engineer",
@@ -106,8 +109,25 @@ def create_profile(profile_data: dict, db = Depends(get_db), current_user = Depe
 
 @router.put("/{user_id}")
 def update_profile(user_id: int, profile_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
+    """
+    Update an existing profile.
+    
+    All fields are optional. Send only the fields you want to update.
+    """
     service = ProfileService(db)
     result, status = service.update_profile(user_id, profile_data)
-    if status not in (200, 201):
+    if status != 200:
+        raise HTTPException(status_code=status, detail=result.get("error"))
+    return result
+
+
+@router.delete("/{user_id}")
+def delete_profile(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+    """
+    Delete a profile by user ID.
+    """
+    service = ProfileService(db)
+    result, status = service.delete_profile(user_id)
+    if status != 200:
         raise HTTPException(status_code=status, detail=result.get("error"))
     return result

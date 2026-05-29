@@ -1,102 +1,141 @@
 /**
- * recommended_candidate.jsx — Recommended Candidates page (employer view)
+ * recommended_candidate.jsx — AI Recommended Candidates page (employer view)
  *
  * Features:
- *   - Advanced filter section for finding candidates
- *   - Top-10 candidate recommendations based on the selected job
- *   - Employer search for matching candidates by name, location, major, degree, and more
- *   - Layout with Contact sidebar, main content, and Footer
+ *   - AI-powered candidate recommendations for selected job
+ *   - Top-N candidates ranked by resume-job match score
+ *   - Membership tier enforcement (Free: 10, Premium: Unlimited)
+ *   - Job selector dropdown to view recommendations for different jobs
+ *   - Simple, clean display
+ *
+ * Note: Search and filtering moved to dashboard.jsx
  */
-import { useState, useEffect, useMemo } from 'react'
+
+import { useState, useEffect } from 'react'
+
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import Contact from '../components/Contact/Contact.jsx'
 import CandidateCard from '../components/CandidateCard/CandidateCard.jsx'
-import CandidateFilter from '../components/FilterSection/CandidateFilter.jsx'
+import Showmore from '../components/Button/Showmore.jsx'
+
 import { getCurrentUserId } from '../services/userService.js'
+import { getUserSubscriptionTier } from '../services/subscriptionService.js'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-const INITIAL_VISIBLE_COUNT = 6
-const TOP_RECOMMENDED_COUNT = 10
+
+function getAuthToken() {
+  return localStorage.getItem('workmate_token')
+}
+
+/**
+ * Generic API fetch helper
+ */
+async function fetchFromAPI(endpoint) {
+  const token = getAuthToken()
+
+  const response = await fetch(
+    `${API_BASE_URL}${endpoint}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
+      },
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(
+      data.detail || data.error || 'API Error'
+    )
+  }
+
+  return data
+}
 
 function RecommendedCandidate() {
-  const [filters, setFilters] = useState({
-    candidateName: '',
-    location: '',
-    experienceLevel: '',
-    degreeType: '',
-    major: '',
-    certification: '',
-    language: '',
-    workArrangement: '',
-    industry: '',
-    roleLevel: '',
-    availability: '',
-    sortBy: 'Most Relevant',
-  })
-
-  const [showFilters, setShowFilters] = useState(false)
   const [jobs, setJobs] = useState([])
   const [selectedJobId, setSelectedJobId] = useState(null)
   const [recommendedCandidates, setRecommendedCandidates] = useState([])
-  const [visibleRecommended, setVisibleRecommended] = useState(INITIAL_VISIBLE_COUNT)
-  const [visibleSearch, setVisibleSearch] = useState(INITIAL_VISIBLE_COUNT)
+  const [visibleCount, setVisibleCount] = useState(6)
+  const [loadingJobs, setLoadingJobs] = useState(true)
   const [loadingCandidates, setLoadingCandidates] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
+  const [subscriptionTier, setSubscriptionTier] = useState(null)
 
-  const currentUserId = getCurrentUserId()
-  const employerId = currentUserId ? Number(currentUserId) : null
+  const userId = getCurrentUserId()
+  const employerId = userId ? Number(userId) : null
 
+  // ─────────────────────────────────────────────────────────
+  // LOAD: Employer's Posted Jobs
+  // ─────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/jobs`)
-        const data = await response.json()
-        const jobList = data?.jobs || []
+        setLoadingJobs(true)
+        setError('')
 
-        const employerJobs = employerId
-          ? jobList.filter(job => Number(job.user_id) === employerId)
-          : []
+        if (!employerId) {
+          setError('No employer ID found.')
+          setJobs([])
+          return
+        }
+
+        const data = await fetchFromAPI('/jobs')
+        const allJobs = data.jobs || []
+
+        // Filter to only employer's jobs
+        const employerJobs = allJobs.filter(
+          job => Number(job.user_id) === employerId
+        )
 
         setJobs(employerJobs)
 
+        // Select first job by default
         if (employerJobs.length > 0) {
           setSelectedJobId(employerJobs[0].id)
-        } else {
-          setSelectedJobId(null)
         }
-      } catch (fetchError) {
-        console.error('Failed to fetch jobs', fetchError)
+      } catch (err) {
+        console.error('Error loading jobs:', err)
+        setError(err.message)
+        setJobs([])
+      } finally {
+        setLoadingJobs(false)
       }
     }
 
     fetchJobs()
   }, [employerId])
 
+  // ─────────────────────────────────────────────────────────
+  // LOAD: AI-Recommended Candidates for Selected Job
+  // ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedJobId) return
 
     const fetchCandidates = async () => {
-      setLoadingCandidates(true)
-      setError(null)
-
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/recommendations/candidates?job_id=${selectedJobId}&limit=${TOP_RECOMMENDED_COUNT}`
+        setLoadingCandidates(true)
+        setError('')
+
+        // Get subscription tier for limit
+        const { limit, tier } = await getUserSubscriptionTier(employerId)
+        setSubscriptionTier(tier)
+
+        // Fetch AI recommendations
+        const data = await fetchFromAPI(
+          `/recommendations/candidates?job_id=${selectedJobId}&limit=${limit}`
         )
 
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}))
-          throw new Error(body.detail || 'Failed to fetch recommended candidates')
-        }
-
-        const data = await response.json()
-        const candidates = data?.candidates || []
-        setRecommendedCandidates(candidates.slice(0, TOP_RECOMMENDED_COUNT))
-        setVisibleRecommended(Math.min(INITIAL_VISIBLE_COUNT, candidates.length))
-        setVisibleSearch(INITIAL_VISIBLE_COUNT)
-      } catch (fetchError) {
-        setError(fetchError.message)
+        setRecommendedCandidates(data.candidates || [])
+      } catch (err) {
+        console.error('Error loading candidates:', err)
+        setError(err.message)
         setRecommendedCandidates([])
       } finally {
         setLoadingCandidates(false)
@@ -104,157 +143,10 @@ function RecommendedCandidate() {
     }
 
     fetchCandidates()
-  }, [selectedJobId])
+  }, [selectedJobId, employerId])
 
   const selectedJob = jobs.find(job => job.id === selectedJobId)
-
-  const hasActiveFilters = useMemo(() => (
-    Object.entries(filters).some(([key, value]) => value && value !== 'Most Relevant')
-  ), [filters])
-
-  const matchesText = (value, query) => {
-    if (!query) return true
-    if (!value) return false
-    return value.toString().toLowerCase().includes(query.toString().toLowerCase())
-  }
-
-  const parseExperience = (experience) => {
-    if (!experience) return 0
-    const match = experience.toString().match(/(\d+)(?=\s*years?)/i)
-    return match ? Number(match[1]) : 0
-  }
-
-  const sortCandidates = (list) => {
-    const sorted = [...list]
-    switch (filters.sortBy) {
-      case 'Experience (High to Low)':
-        sorted.sort((a, b) => parseExperience(b.experience) - parseExperience(a.experience))
-        break
-      case 'Experience (Low to High)':
-        sorted.sort((a, b) => parseExperience(a.experience) - parseExperience(b.experience))
-        break
-      case 'Most Recent':
-        sorted.sort((a, b) => {
-          if (!a.created_at || !b.created_at) return 0
-          return new Date(b.created_at) - new Date(a.created_at)
-        })
-        break
-      case 'Most Relevant':
-      default:
-        sorted.sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0))
-        break
-    }
-    return sorted
-  }
-
-  const filteredCandidates = useMemo(() => {
-    const filtered = recommendedCandidates.filter(candidate => (
-      matchesText(candidate.fullName, filters.candidateName) &&
-      matchesText(candidate.location, filters.location) &&
-      matchesText(candidate.major, filters.major) &&
-      matchesText(candidate.degree || candidate.education_level, filters.degreeType) &&
-      matchesText(candidate.certification, filters.certification) &&
-      matchesText(candidate.language, filters.language) &&
-      matchesText(candidate.workArrangement || candidate.work_arrangement, filters.workArrangement) &&
-      matchesText(candidate.industry, filters.industry) &&
-      matchesText(candidate.roleLevel || candidate.role_level, filters.roleLevel) &&
-      matchesText(candidate.availability, filters.availability)
-    ))
-
-    return sortCandidates(filtered)
-  }, [recommendedCandidates, filters])
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
-  const handleClearFilters = () => {
-    setFilters({
-      candidateName: '',
-      location: '',
-      experienceLevel: '',
-      degreeType: '',
-      major: '',
-      certification: '',
-      language: '',
-      workArrangement: '',
-      industry: '',
-      roleLevel: '',
-      availability: '',
-      sortBy: 'Most Relevant',
-    })
-  }
-
-  const handleShowMore = (section) => {
-    if (section === 'recommended') {
-      setVisibleRecommended(prev => Math.min(prev + 4, recommendedCandidates.length))
-    } else {
-      setVisibleSearch(prev => Math.min(prev + 4, filteredCandidates.length))
-    }
-  }
-
-  const handleShowLess = (section) => {
-    if (section === 'recommended') {
-      setVisibleRecommended(INITIAL_VISIBLE_COUNT)
-    } else {
-      setVisibleSearch(INITIAL_VISIBLE_COUNT)
-    }
-  }
-
-  const renderCandidateSection = (title, candidates, visibleCount, sectionKey) => {
-    const displayedCandidates = candidates.slice(0, visibleCount)
-    const hasMore = visibleCount < candidates.length
-    const hasLess = visibleCount > INITIAL_VISIBLE_COUNT
-
-    return (
-      <section className="mb-10">
-        <div className="mb-6">
-          <h2 className="text-[1.4rem] font-semibold text-slate-900 mb-2">{title}</h2>
-        </div>
-
-        {loadingCandidates ? (
-          <div className="text-slate-600">Loading candidates...</div>
-        ) : error ? (
-          <div className="text-red-600">{error}</div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-              {displayedCandidates.map(candidate => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
-              ))}
-              {displayedCandidates.length === 0 && (
-                <div className="col-span-full text-slate-500">
-                  No candidates found for this section.
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-center gap-3">
-              {hasMore && (
-                <button
-                  onClick={() => handleShowMore(sectionKey)}
-                  className="cursor-pointer rounded-full border-0 bg-blue-700 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-blue-600 hover:shadow-[0_4px_14px_rgba(37,99,235,0.3)]"
-                >
-                  Show More
-                </button>
-              )}
-              {hasLess && (
-                <button
-                  onClick={() => handleShowLess(sectionKey)}
-                  className="cursor-pointer rounded-full border-0 bg-slate-600 px-[22px] py-[9px] text-[0.92rem] font-bold text-white transition-[background-color,box-shadow] hover:bg-slate-700 hover:shadow-[0_4px_14px_rgba(71,85,105,0.3)]"
-                >
-                  Show Less
-                </button>
-              )}
-            </div>
-          </>
-        )}
-      </section>
-    )
-  }
+  const displayedCandidates = recommendedCandidates.slice(0, visibleCount)
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -264,64 +156,141 @@ function RecommendedCandidate() {
         <Contact />
 
         <div className="flex-1 min-w-0 flex flex-col gap-8">
+          {/* Header with Job Selector */}
           <section className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="mb-2.5 text-[1.6rem] text-slate-900 font-semibold">Recommended Candidates</h1>
+              <div className="flex-1">
+                <h1 className="mb-2.5 text-[1.6rem] text-slate-900 font-semibold">
+                  AI-Recommended Candidates
+                </h1>
                 <p className="text-slate-600 leading-relaxed">
-                  Top candidates for the selected job are recommended based on the job description and requirements.
-                  Use the filters below to search for matching candidates directly.
+                  Top candidates selected based on job description and requirements. These
+                  recommendations use AI to match candidate skills with your job posting.
                 </p>
               </div>
 
-              <div className="w-full max-w-md">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Select Job</label>
-                <select
-                  value={selectedJobId ?? ''}
-                  onChange={(e) => setSelectedJobId(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-                >
-                  <option value="" disabled>
-                    {jobs.length ? 'Select a job' : 'No posted jobs found'}
-                  </option>
-                  {jobs.map(job => (
-                    <option key={job.id} value={job.id}>
-                      {job.title} {job.location ? `• ${job.location}` : ''}
+              {/* Job Selector */}
+              {jobs.length > 0 && (
+                <div className="w-full max-w-sm">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Select Job
+                  </label>
+                  <select
+                    value={selectedJobId ?? ''}
+                    onChange={e => setSelectedJobId(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                  >
+                    <option value="" disabled>
+                      Select a job...
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {jobs.map(job => (
+                      <option key={job.id} value={job.id}>
+                        {job.title}
+                        {job.location ? ` • ${job.location}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
+            {/* Selected Job Info */}
             {selectedJob && (
-              <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-                Recommended for: <span className="font-semibold">{selectedJob.title}</span>
+              <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <span className="font-semibold">Recommendations for:</span> {selectedJob.title}
                 {selectedJob.company ? ` at ${selectedJob.company}` : ''}
+              </div>
+            )}
+
+            {/* Subscription Tier */}
+            {subscriptionTier && (
+              <div className="mt-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                📊 Subscription Tier: <span className="font-semibold capitalize">{subscriptionTier}</span>
               </div>
             )}
           </section>
 
-          <CandidateFilter
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-          />
+          {/* Loading State */}
+          {loadingJobs || loadingCandidates ? (
+            <div className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+              <p className="text-slate-600">
+                {loadingJobs ? 'Loading your jobs...' : 'Loading candidate recommendations...'}
+              </p>
+            </div>
+          ) : null}
 
-          {selectedJobId && renderCandidateSection(
-            `Top ${TOP_RECOMMENDED_COUNT} Candidates for ${selectedJob?.title || 'Selected Job'}`,
-            recommendedCandidates,
-            visibleRecommended,
-            'recommended'
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+              <p className="text-red-700 font-semibold mb-2">Unable to Load Recommendations</p>
+              <p className="text-red-600">{error}</p>
+            </div>
           )}
 
-          {hasActiveFilters && renderCandidateSection(
-            'Filtered Candidates',
-            filteredCandidates,
-            visibleSearch,
-            'search'
+          {/* No Jobs Posted */}
+          {!loadingJobs && jobs.length === 0 && (
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-[14px] px-8 py-7">
+              <p className="text-amber-900">
+                You have no posted jobs yet. Post a job to see candidate recommendations.
+              </p>
+            </div>
           )}
+
+          {/* Empty Recommendations */}
+          {!loadingJobs &&
+            !loadingCandidates &&
+            !error &&
+            selectedJobId &&
+            recommendedCandidates.length === 0 && (
+              <div className="bg-white rounded-[14px] px-8 py-7 shadow-[0_2px_12px_rgba(15,23,42,0.07)]">
+                <p className="text-slate-600">
+                  No candidates match this job yet. Check back later as more candidates join the platform.
+                </p>
+              </div>
+            )}
+
+          {/* Candidates Grid */}
+          {!loadingJobs &&
+            !loadingCandidates &&
+            !error &&
+            recommendedCandidates.length > 0 && (
+              <>
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-[1.2rem] font-semibold text-slate-900">
+                      Top {Math.min(visibleCount, recommendedCandidates.length)} of{' '}
+                      {recommendedCandidates.length} Candidates
+                    </h2>
+                    <p className="text-slate-600 text-sm mt-1">
+                      Click on any candidate to view their full profile
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+                    {displayedCandidates.map(candidate => (
+                      <CandidateCard
+                        key={candidate.userId || candidate.id}
+                        candidate={candidate}
+                      />
+                    ))}
+                  </div>
+
+                  {recommendedCandidates.length > 6 && (
+                    <Showmore
+                      visibleCount={visibleCount}
+                      totalCount={recommendedCandidates.length}
+                      initialCount={6}
+                      onShowMore={() =>
+                        setVisibleCount(prev =>
+                          Math.min(prev + 6, recommendedCandidates.length)
+                        )
+                      }
+                      onShowLess={() => setVisibleCount(6)}
+                    />
+                  )}
+                </div>
+              </>
+            )}
         </div>
 
         <div className="w-[240px] shrink-0 hidden xl:block" />

@@ -21,38 +21,7 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-// Sample data for saved jobs
-// const savedJobs = [
-//   {
-//     id: 1,
-//     title: 'Fresher Frontend Developer',
-//     company: 'TechCorp',
-//     employmentType: 'Full Time',
-//     workArrangement: 'On Site',
-//     location: 'Sydney, NSW',
-//     postedTime: 'Posted 2 days ago'
-//   },
-//   {
-//     id: 2,
-//     title: 'React Developer',
-//     company: 'StartupXYZ',
-//     employmentType: 'Full Time',
-//     workArrangement: 'Remote',
-//     location: 'Remote',
-//     postedTime: 'Posted 1 week ago'
-//   },
-//   {
-//     id: 3,
-//     title: 'UI/UX Engineer',
-//     company: 'DesignHub',
-//     employmentType: 'Contract',
-//     workArrangement: 'Hybrid',
-//     location: 'Melbourne, VIC',
-//     postedTime: 'Posted 3 days ago'
-//   }
-// ]
-
-// Sample saved candidates
+// Sample saved candidates for employers
 const savedCandidates = [
   {
     id: 1,
@@ -96,6 +65,32 @@ function Applications() {
   const [isLoadingSaved, setIsLoadingSaved] = useState(false)
   const [savedError, setSavedError] = useState('')
 
+  /**
+   * Get color classes for application status badge
+   */
+  const getApplicationStatusColor = (status) => {
+    const colors = {
+      applied: 'bg-blue-100 text-blue-800 border-blue-300',
+      reviewing: 'bg-amber-100 text-amber-800 border-amber-300',
+      shortlist: 'bg-purple-100 text-purple-800 border-purple-300',
+      rejected: 'bg-red-100 text-red-800 border-red-300',
+    }
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-300'
+  }
+
+  /**
+   * Get display label for application status
+   */
+  const getApplicationStatusLabel = (status) => {
+    const labels = {
+      applied: 'Applied',
+      reviewing: 'Reviewing',
+      shortlist: 'Shortlisted',
+      rejected: 'Rejected',
+    }
+    return labels[status] || status
+  }
+
   // Fetch candidate applications
   useEffect(() => {
     if (!isEmployer && userId) {
@@ -111,7 +106,9 @@ function Applications() {
     }
   }, [userId, isEmployer])
 
-  // Helper function
+  /**
+   * Helper function to calculate days ago from date string
+   */
   const calculateDaysAgo = (dateString) => {
     if (!dateString) return 'recently'
 
@@ -131,6 +128,9 @@ function Applications() {
     return `${Math.floor(daysAgo / 365)} years ago`
   }
 
+  /**
+   * Fetch saved jobs for candidates
+   */
   const fetchSavedJobs = async () => {
     try {
       setIsLoadingSaved(true)
@@ -191,7 +191,9 @@ function Applications() {
     }
   }
 
-  // Fetch candidate applied jobs
+  /**
+   * Fetch candidate applied jobs with status
+   */
   const fetchAppliedJobs = async () => {
     try {
       setIsLoadingApplied(true)
@@ -215,9 +217,7 @@ function Applications() {
       }
 
       const applicationsData = await applicationsResponse.json()
-
-      const applications =
-        applicationsData.applications || []
+      const applications = applicationsData.applications || []
 
       const jobsWithDetails = await Promise.all(
         applications.map(async (app) => {
@@ -235,7 +235,6 @@ function Applications() {
             if (!jobResponse.ok) return null
 
             const jobData = await jobResponse.json()
-
             const job = jobData.job || jobData
 
             return {
@@ -245,9 +244,7 @@ function Applications() {
               location: job.location,
               employmentType: job.job_type,
               workArrangement: job.job_type,
-              postedTime: `Posted ${calculateDaysAgo(
-                job.created_at
-              )}`,
+              postedTime: `Posted ${calculateDaysAgo(job.created_at)}`,
               salary:
                 job.salary_min && job.salary_max
                   ? `$${job.salary_min} - $${job.salary_max}`
@@ -260,7 +257,6 @@ function Applications() {
               `Failed to fetch job ${app.job_id}:`,
               err
             )
-
             return null
           }
         })
@@ -276,7 +272,6 @@ function Applications() {
         'Error fetching applied jobs:',
         error
       )
-
       setAppliedError(
         error.message || 'Failed to load applied jobs'
       )
@@ -285,7 +280,9 @@ function Applications() {
     }
   }
 
-  // Fetch employer posted jobs
+  /**
+   * Fetch employer posted jobs
+   */
   const fetchPostedJobs = async () => {
     try {
       setIsLoadingPosted(true)
@@ -309,7 +306,6 @@ function Applications() {
       }
 
       const data = await response.json()
-
       const allJobs = data.jobs || []
 
       const myJobs = allJobs
@@ -323,11 +319,9 @@ function Applications() {
           location: job.location,
           employmentType: job.job_type,
           workArrangement: 'On Site',
-
           postedTime: `Posted ${calculateDaysAgo(
             job.created_at
           )}`,
-
           salary:
             job.salary_min && job.salary_max
               ? `$${job.salary_min} - $${job.salary_max}`
@@ -340,7 +334,6 @@ function Applications() {
         'Error fetching posted jobs:',
         error
       )
-
       setPostedError(
         error.message || 'Failed to load posted jobs'
       )
@@ -378,7 +371,7 @@ function Applications() {
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-slate-900 mb-2">
                 {isEmployer
-                  ? 'Your Posted Job'
+                  ? 'Your Posted Jobs'
                   : 'Saved Jobs'}
               </h2>
 
@@ -427,14 +420,42 @@ function Applications() {
                 </div>
               )
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                  />
-                ))}
-              </div>
+              isLoadingSaved ? (
+                <div className="text-center py-12">
+                  <p className="text-slate-600">
+                    Loading your saved jobs...
+                  </p>
+                </div>
+              ) : savedError ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                  <p className="text-red-700 font-medium">
+                    Error loading saved jobs
+                  </p>
+
+                  <p className="text-red-600 text-sm mt-2">
+                    {savedError}
+                  </p>
+                </div>
+              ) : savedJobs.length === 0 ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                  <p className="text-blue-700 font-medium">
+                    No saved jobs yet
+                  </p>
+
+                  <p className="text-blue-600 text-sm mt-2">
+                    Save jobs to see them here
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {savedJobs.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                    />
+                  ))}
+                </div>
+              )
             )}
           </section>
 
@@ -495,27 +516,23 @@ function Applications() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {appliedJobs.map((job) => (
-                      <div
-                        key={job.id}
-                        className="relative"
-                      >
+                      <div key={job.id} className="flex flex-col">
                         <JobCard job={job} />
 
-                        {/* Status badge */}
-                        <div className="absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow-md">
-                          <span
-                            className={`text-xs font-semibold capitalize ${job.applicationStatus ===
-                                'applied'
-                                ? 'text-blue-600'
-                                : job.applicationStatus ===
-                                  'accepted'
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              }`}
-                          >
-                            {job.applicationStatus}
-                          </span>
-                        </div>
+                        {/* Application Status Badge */}
+                        {job.applicationStatus && (
+                          <div className="mt-3 flex items-center justify-center">
+                            <div
+                              className={`px-4 py-2 rounded-full text-sm font-semibold border ${getApplicationStatusColor(
+                                job.applicationStatus
+                              )}`}
+                            >
+                              {getApplicationStatusLabel(
+                                job.applicationStatus
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
