@@ -14,6 +14,13 @@ class ProfileRepository:
             .scalars()
             .first()
         )
+    
+    def get_by_user_phone(self, phone: int):
+        return (
+            self.db.execute(select(Profile).where(Profile.phone == phone))
+            .scalars()
+            .first()
+        )
 
     def get_all_with_embeddings(self):
         return self.db.execute(select(Profile).where(Profile.resume_embedding != None)).scalars().all()

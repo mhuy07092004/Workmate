@@ -59,7 +59,7 @@ class TestCP03_PreferredWorkingMode:
  
     @pytest.mark.parametrize("mode", ["Remote", "On-site", "Hybrid"])
     def test_valid_preferred_mode(self, mode):
-        p = make_profile(preferred_mode=mode)
+        p = make_profile(preferred_working_mode=mode)
         assert p.preferred_working_mode == mode
  
     def test_invalid_preferred_mode(self):
@@ -104,7 +104,7 @@ class TestCP05_MatchingAccuracy:
         """Preferred mode and location should contribute to embedding text"""
         p = make_profile(
             skills=["Python"],
-            preferred_mode="Remote",
+            preferred_working_mode="Remote",
             preferred_location="Sydney"
         )
         combined = f"skills: {' '.join(p.skills)} mode: {p.preferred_working_mode} location: {p.preferred_location}"

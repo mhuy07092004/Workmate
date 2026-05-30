@@ -18,7 +18,7 @@ def make_user(id=1, email="test@test.com", role="candidate", full_name="Test Use
     return u
 
 def make_profile(user_id=1, skills=None, work_experience=None,
-                 preferred_mode=None, preferred_location=None,
+                 preferred_working_mode=None, preferred_location=None,
                  resume_embedding=None, experiences=None):
     p = MagicMock()
     p.id = 1
@@ -35,7 +35,7 @@ def make_profile(user_id=1, skills=None, work_experience=None,
     p.experiences = experiences or []
     p.skills = skills if skills is not None else ["Python", "SQL"]
     p.work_experience = work_experience or []
-    p.preferred_working_mode = preferred_mode or "Hybrid"
+    p.preferred_working_mode = preferred_working_mode or "Hybrid"
     p.preferred_location = preferred_location or "Sydney"
     p.is_premium = False
     return p

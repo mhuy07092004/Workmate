@@ -93,6 +93,13 @@ class ProfileService:
     def create_profile(self, profile_data: dict):
         """Create a new profile"""
         self._populate_resume_embedding(profile_data)
+        if "full_name" in profile_data:
+            if not profile_data["full_name"].strip():
+                return {"error": "Full Name is missing"}, 400
+        if "phone" in profile_data:
+            profile = self.profile_repo.get_by_user_phone(profile_data["phone"])
+            if profile is not None and profile.user_id != profile_data["user_id"]:
+                return {"error": "Phone already exists"}, 400
         profile = self.profile_repo.save(profile_data)
         return {"message": "Profile created successfully.", "profile": self._serialize_profile(profile)}, 201
 
