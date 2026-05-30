@@ -1,3 +1,8 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
+scikit-learn
+numpy
 fastapi
 uvicorn
 sqlalchemy
@@ -5,9 +10,6 @@ python-jose
 passlib
 werkzeug
 python-multipart
-sentence-transformers
-scikit-learn
-numpy
 PyPDF2
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.21.1
@@ -15,3 +17,4 @@ pytest
 pytest-mock
 requests
 selenium
+# python-dotenv

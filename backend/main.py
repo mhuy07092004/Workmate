@@ -7,14 +7,16 @@ from seed_data import seed_database
 from database import SessionLocal
 from routes import employer_profiles, recommendations
 
+
+
 app = FastAPI(title="Workmate API")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 from fastapi.staticfiles import StaticFiles

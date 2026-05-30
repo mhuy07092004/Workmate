@@ -14,16 +14,19 @@ def get_db():
 
 router = APIRouter(tags=["profile"])
 
+# ✅ FIX: use env var, fallback to hardcoded for local dev
+BASE_URL = os.getenv("BASE_URL", "https://workmate-backend-553349336249.australia-southeast1.run.app")
+
 UPLOAD_DIR = "uploads"
-os.makedirs(f"{UPLOAD_DIR}/resumes", exist_ok=True)
-os.makedirs(f"{UPLOAD_DIR}/profiles", exist_ok=True)
+RESUME_DIR = os.path.join(UPLOAD_DIR, "resumes")
+PROFILE_DIR = os.path.join(UPLOAD_DIR, "profiles")
+
+os.makedirs(RESUME_DIR, exist_ok=True)
+os.makedirs(PROFILE_DIR, exist_ok=True)
 
 
 @router.get("/{user_id}")
-def get_profile(user_id: int, db = Depends(get_db)):
-    """
-    Retrieve a profile by user ID.
-    """
+def get_profile(user_id: int, db=Depends(get_db)):
     service = ProfileService(db)
     result, status = service.get_profile(user_id)
     if status != 200:
@@ -32,39 +35,48 @@ def get_profile(user_id: int, db = Depends(get_db)):
 
 
 @router.post("/upload/{user_id}")
-async def upload_files(user_id: int, 
-                      resume: UploadFile = File(None), 
-                      profile_picture: UploadFile = File(None),
-                      db = Depends(get_db),
-                      current_user = Depends(get_current_user)):
-    """Upload resume and/or profile picture - requires authentication"""
+async def upload_files(
+    user_id: int,
+    resume: UploadFile = File(None),
+    profile_picture: UploadFile = File(None),
+    db=Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     file_urls = {}
-    
+
     try:
         if resume:
             if resume.content_type != "application/pdf":
                 raise HTTPException(status_code=400, detail="Resume must be PDF")
+
             filename = f"{user_id}_{datetime.now().timestamp()}.pdf"
-            filepath = f"{UPLOAD_DIR}/resumes/{filename}"
+            filepath = os.path.join(RESUME_DIR, filename)
+
             with open(filepath, "wb") as f:
                 f.write(await resume.read())
-            file_urls["resume_url"] = filepath
-        
+
+            # ✅ FIX: return full public HTTPS URL, not local path
+            file_urls["resume_url"] = f"{BASE_URL}/uploads/resumes/{filename}"
+
         if profile_picture:
             if profile_picture.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
                 raise HTTPException(status_code=400, detail="Profile picture must be JPG or PNG")
+
             filename = f"{user_id}_{datetime.now().timestamp()}.jpg"
-            filepath = f"{UPLOAD_DIR}/profiles/{filename}"
+            filepath = os.path.join(PROFILE_DIR, filename)
+
             with open(filepath, "wb") as f:
                 f.write(await profile_picture.read())
-            file_urls["profile_picture_url"] = filepath
-        
-        # If resume was uploaded, trigger embedding generation
+
+            # ✅ FIX: return full public HTTPS URL, not local path
+            file_urls["profile_picture_url"] = f"{BASE_URL}/uploads/profiles/{filename}"
+
         if "resume_url" in file_urls:
             service = ProfileService(db)
             service.generate_resume_embedding_for_user(user_id, file_urls["resume_url"])
-        
+
         return file_urls
+
     except HTTPException:
         raise
     except Exception as e:
@@ -72,34 +84,7 @@ async def upload_files(user_id: int,
 
 
 @router.post("/")
-def create_profile(profile_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
-    """
-    Create a new profile for the authenticated user.
-    
-    Expected JSON:
-    {
-        "user_id": 1,
-        "full_name": "John Candidate",
-        "email": "user@example.com",
-        "phone": "+61 400 000 000",
-        "education_level": "Bachelor",
-        "major": "Computer Science",
-        "school": "Tech University",
-        "about_you": "My profile summary...",
-        "skills": ["Python", "React", "SQL"],
-        "preferred_working_mode": "Hybrid",
-        "preferred_location": "Sydney",
-        "experiences": [
-            {
-                "position": "Software Engineer",
-                "company_name": "TechCorp",
-                "from_date": "2022-01",
-                "until_date": "2023-05",
-                "is_currently_working": false
-            }
-        ]
-    }
-    """
+def create_profile(profile_data: dict, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.create_profile(profile_data)
     if status != 201:
@@ -108,12 +93,7 @@ def create_profile(profile_data: dict, db = Depends(get_db), current_user = Depe
 
 
 @router.put("/{user_id}")
-def update_profile(user_id: int, profile_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
-    """
-    Update an existing profile.
-    
-    All fields are optional. Send only the fields you want to update.
-    """
+def update_profile(user_id: int, profile_data: dict, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.update_profile(user_id, profile_data)
     if status != 200:
@@ -122,10 +102,7 @@ def update_profile(user_id: int, profile_data: dict, db = Depends(get_db), curre
 
 
 @router.delete("/{user_id}")
-def delete_profile(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
-    """
-    Delete a profile by user ID.
-    """
+def delete_profile(user_id: int, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.delete_profile(user_id)
     if status != 200:
