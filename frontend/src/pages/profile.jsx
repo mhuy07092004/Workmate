@@ -344,7 +344,10 @@ function CandidateProfile() {
         })
 
         if (profile.resume_url) {
-          setResumeUrl(profile.resume_url)
+          const url = profile.resume_url.startsWith('http')
+            ? profile.resume_url
+            : `${API_BASE_URL}/${profile.resume_url.replace(/^\//, '')}`
+          setResumeUrl(url)
         }
 
         if (Array.isArray(profile.experiences) && profile.experiences.length > 0) {
