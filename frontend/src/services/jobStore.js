@@ -184,7 +184,7 @@ export function normalizeApiJob(job) {
   if (typeof requirements === 'string' && requirements.startsWith('[')) {
     try {
       requirements = JSON.parse(requirements).join(', ')
-    } catch (e) {
+    } catch (_e) {
       // If parsing fails, keep as string
     }
   }
