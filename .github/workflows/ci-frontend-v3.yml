@@ -31,9 +31,10 @@ jobs:
           npm ci
       
       - name: Run ESLint
-        run: |
-          cd frontend
-          continue-on-error: true
+        working-directory: frontend
+        continue-on-error: true
+        run: 
+          
           npm run lint
       
       - name: Build project
