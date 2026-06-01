@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Backend (FastAPI) ─────────────────────────────────────────────────────
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          # torch is large — install CPU-only build to keep CI fast
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+
+      - name: Lint with flake8
+        working-directory: backend
+        run: |
+          pip install flake8
+          flake8 . --max-line-length=88 --exclude=__pycache__,.venv
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          # Provide a dummy secret key so JWT config doesn't fail during tests
+          SECRET_KEY: ci-test-secret-key
+          BASE_URL: http://localhost:8000
+        run: pytest --tb=short
+
+  # ── Frontend (React + Vite) ───────────────────────────────────────────────
+  frontend:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:8000
+        run: npm run build
