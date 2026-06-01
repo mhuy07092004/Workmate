@@ -27,11 +27,13 @@ jobs:
           cache: 'pip'
       
       - name: Install dependencies
-        run: 
+        run: |
+          cd backend
           pip install -r requirements.txt
       
       - name: Run tests with pytest
-        run: 
+        run: |
+          cd backend
           pytest tests/ -v --tb=short
       
       - name: Run linting (optional)
