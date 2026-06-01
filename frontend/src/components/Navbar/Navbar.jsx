@@ -120,7 +120,7 @@ function Navbar() {
   const location = useLocation()
 
   const [isSignedIn, setIsSignedIn] = useState(() => !!localStorage.getItem('workmate_token'))
-  const [userRole, setUserRole] = useState(() => getCurrentUserRole())
+  const [userRole, _setUserRole] = useState(() => getCurrentUserRole())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
