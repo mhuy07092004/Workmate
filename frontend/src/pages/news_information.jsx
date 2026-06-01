@@ -35,7 +35,7 @@ This hiring announcement signals strong growth in Australia's tech sector and re
 }
 
 function NewsInformation() {
-  const { id } = useParams()
+  const { id: _id } = useParams()
   const navigate = useNavigate()
 
   // In a real app, fetch news data based on id
