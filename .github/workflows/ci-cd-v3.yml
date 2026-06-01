@@ -1,0 +1,126 @@
+name: Workmate Full CI/CD
+
+on:
+push:
+branches:
+- main
+- develop
+
+pull_request:
+branches:
+- main
+- develop
+
+jobs:
+
+frontend:
+runs-on: ubuntu-latest
+
+
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
+      cache: npm
+      cache-dependency-path: package-lock.json
+
+  - name: Install Frontend Dependencies
+    run: npm ci
+
+  - name: Run ESLint
+    run: npm run lint
+
+  - name: Build Frontend
+    run: npm run build
+
+
+backend:
+runs-on: ubuntu-latest
+
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.11"
+      cache: pip
+      cache-dependency-path: backend/requirements.txt
+
+  - name: Install Backend Dependencies
+    working-directory: backend
+    run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+
+  - name: Verify Test Folder
+    run: |
+      ls -la
+      ls -la tests || echo "No tests directory found"
+
+  - name: Run Backend Tests
+    env:
+      PYTHONPATH: .
+      SECRET_KEY: ci-secret-key
+    run: |
+      pytest tests -v --tb=short
+
+  - name: Backend Lint
+    run: |
+      pip install flake8
+      flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
+
+
+docker-build:
+needs:
+- frontend
+- backend
+
+
+if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+runs-on: ubuntu-latest
+
+permissions:
+  contents: read
+  packages: write
+
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+
+  - name: Setup Docker Buildx
+    uses: docker/setup-buildx-action@v3
+
+  - name: Login to GitHub Container Registry
+    uses: docker/login-action@v3
+    with:
+      registry: ghcr.io
+      username: ${{ github.actor }}
+      password: ${{ secrets.GITHUB_TOKEN }}
+
+  - name: Build Backend Image
+    uses: docker/build-push-action@v6
+    with:
+      context: ./backend
+      file: ./backend/Dockerfile.backend
+      push: true
+      tags: |
+        ghcr.io/${{ github.repository_owner }}/workmate-backend:latest
+        ghcr.io/${{ github.repository_owner }}/workmate-backend:${{ github.sha }}
+
+  # Enable only if frontend has a Dockerfile
+  # - name: Build Frontend Image
+  #   uses: docker/build-push-action@v6
+  #   with:
+  #     context: .
+  #     file: Dockerfile.frontend
+  #     push: true
+  #     tags: |
+  #       ghcr.io/${{ github.repository_owner }}/workmate-frontend:latest
+
