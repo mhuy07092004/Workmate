@@ -131,7 +131,7 @@ function Applications() {
   /**
    * Fetch saved jobs for candidates
    */
-  const fetchSavedJobs = async () => {
+  async function fetchSavedJobs() {
     try {
       setIsLoadingSaved(true)
       setSavedError('')
@@ -194,7 +194,7 @@ function Applications() {
   /**
    * Fetch candidate applied jobs with status
    */
-  const fetchAppliedJobs = async () => {
+  async function fetchAppliedJobs() {
     try {
       setIsLoadingApplied(true)
       setAppliedError('')
@@ -283,7 +283,7 @@ function Applications() {
   /**
    * Fetch employer posted jobs
    */
-  const fetchPostedJobs = async () => {
+  async function fetchPostedJobs() {
     try {
       setIsLoadingPosted(true)
       setPostedError('')

@@ -78,7 +78,7 @@ function PostsPage() {
     fetchPosts()
   }, [])
 
-  const fetchPosts = async () => {
+  async function fetchPosts() {
     try {
       setIsLoadingPosts(true)
       setLoadError('')

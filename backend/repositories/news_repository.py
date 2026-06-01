@@ -1,6 +1,7 @@
 from models.news import News
 from sqlalchemy import select
 
+
 class NewsRepository:
     def __init__(self, db):
         self.db = db

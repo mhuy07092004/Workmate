@@ -3,6 +3,7 @@ from repositories.job_repository import JobRepository
 from repositories.profile_repository import ProfileRepository
 from repositories.user_repository import UserRepository
 
+
 class ApplicationService:
     def __init__(self, db):
         self.application_repo = ApplicationRepository(db)
@@ -13,7 +14,7 @@ class ApplicationService:
     def get_applications_for_user(self, user_id: int):
         applications = self.application_repo.get_by_user(user_id)
         return {"applications": applications}, 200
-    
+
     def get_applicants_for_job(self, job_id: int, current_user: dict):
         job = self.job_repo.get_by_id(job_id)
         if not job:
@@ -39,7 +40,7 @@ class ApplicationService:
                 "applied_at": app.applied_at.isoformat() if app.applied_at else None
             })
         return {"applicants": applicants}, 200
-    
+
     def apply_to_job(self, application_data: dict, current_user: dict):
         if current_user.get("role") == "employer":
             return {"error": "Employers cannot apply for jobs."}, 403
@@ -55,7 +56,7 @@ class ApplicationService:
         application_data["user_id"] = user_id
         application = self.application_repo.save(application_data)
         return {"message": "Application submitted successfully", "application": application}, 201
-    
+
     def update_application_status(self, id: int, status: str, current_user: dict):
         """
         Update application status with authorization check.
@@ -65,21 +66,21 @@ class ApplicationService:
         application = self.application_repo.get_by_id(id)
         if not application:
             return {"error": "Application not found"}, 404
-        
+
         # Get the job associated with this application
         job = self.job_repo.get_by_id(application.job_id)
         if not job:
             return {"error": "Job not found"}, 404
-        
+
         # Check authorization - only employer who owns the job can update
         if current_user.get("role") != "employer" or job.user_id != current_user.get("user_id"):
             return {"error": "Forbidden - you do not own this job"}, 403
-        
+
         # Update the status
         updated_application = self.application_repo.update_status(id, status)
         return {"message": "Application status updated", "application": updated_application}, 200
 
-    
+
     def delete_application(self, id: int):
         application = self.application_repo.delete(id)
         if not application:

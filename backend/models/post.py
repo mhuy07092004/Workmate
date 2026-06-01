@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
 
+
 class Post(Base):
     __tablename__ = "posts"
 
@@ -14,7 +15,7 @@ class Post(Base):
     comments_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
+
     # Relationship to User
     author = relationship("User", foreign_keys=[author_id])
 

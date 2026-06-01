@@ -1,6 +1,7 @@
 from models.employer_profile import EmployerProfile
 from sqlalchemy import select
 
+
 class EmployerProfileRepository:
     def __init__(self, db):
         self.db = db

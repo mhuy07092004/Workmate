@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.news_service import NewsService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -13,6 +14,8 @@ def get_db():
 router = APIRouter(tags=["news"])
 
 @router.get("/")
+
+
 def get_news(db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Retrieve all news items.
@@ -25,6 +28,8 @@ def get_news(db = Depends(get_db), current_user = Depends(get_current_user)):
     return result
 
 @router.get("/{news_id}")
+
+
 def get_news_item(news_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Retrieve a news item by ID.
@@ -37,6 +42,8 @@ def get_news_item(news_id: int, db = Depends(get_db), current_user = Depends(get
     return result
 
 @router.post("/")
+
+
 def create_news(news_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new news item.
@@ -56,6 +63,8 @@ def create_news(news_data: dict, db = Depends(get_db), current_user = Depends(ge
     return result
 
 @router.put("/{news_id}")
+
+
 def update_news(news_id: int, news_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Update an existing news item by ID.
@@ -75,6 +84,8 @@ def update_news(news_id: int, news_data: dict, db = Depends(get_db), current_use
     return result
 
 @router.delete("/{news_id}")
+
+
 def delete_news(news_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a news item by ID.

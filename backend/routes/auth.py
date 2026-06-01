@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from database import SessionLocal
 from services.auth_service import AuthService
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -12,6 +13,8 @@ def get_db():
 router = APIRouter(tags=["auth"])
 
 @router.post("/signup")
+
+
 def sign_up(user_data: dict, db = Depends(get_db)):
     """
     Register a new user (candidate or employer).
@@ -30,6 +33,8 @@ def sign_up(user_data: dict, db = Depends(get_db)):
     return result
 
 @router.post("/signin")
+
+
 def sign_in(credentials: dict, db = Depends(get_db)):
     """
     Authenticate a user and return a JWT token.

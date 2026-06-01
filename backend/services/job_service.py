@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from utils.embeddings import generate_embedding
 from fuzzywuzzy import fuzz
 
+
 class JobService:
     def __init__(self, db):
         self.job_repo = JobRepository(db)
@@ -23,7 +24,7 @@ class JobService:
         embedding = generate_embedding(combined_text)
         if embedding:
             job_data['job_embedding'] = embedding
-        
+
         job = self.job_repo.save(job_data)
         return {"message": "Job created successfully", "job": self._serialize_job(job)}, 201
 
@@ -32,7 +33,7 @@ class JobService:
         if "description" in job_data or "requirements" in job_data:
             combined_text = f"{job_data.get('description', '')} {job_data.get('requirements', '')}"
             job_data["job_embedding"] = generate_embedding(combined_text)
-        
+
         job = self.job_repo.update(id, job_data)
         if not job:
             return {"error": "Job not found"}, 404
@@ -43,11 +44,11 @@ class JobService:
         if not job:
             return {"error": "Job not found"}, 404
         return {"message": "Job deleted successfully"}, 200
-    
+
     def search_jobs(self, filters: dict):
         """
         Search jobs by keyword (in description + requirements) and apply filters.
-        
+
         Filters:
           - keyword: Searches description + requirements (with fuzzy matching for typos)
           - location: Exact filter
@@ -55,7 +56,7 @@ class JobService:
           - salary_min: Range filter
           - salary_max: Range filter
           - company: Exact filter
-        
+
         Returns:
             List of jobs matching criteria, sorted by fuzzy match score (highest first)
         """
@@ -64,18 +65,18 @@ class JobService:
         # Handle fuzzy keyword search in description + requirements
         if filters.get("keyword"):
             search_keyword = filters["keyword"].lower()
-            
+
             # Filter by fuzzy matching on description + requirements
             filtered_jobs = []
             for job in jobs:
                 job_content = f"{job.title or ''} {job.description or ''} {job.requirements or ''}".lower()
-                
+
                 # Use fuzzy matching with 70% threshold for typo tolerance
                 match_score = fuzz.token_set_ratio(search_keyword, job_content)
-                
+
                 if match_score >= 50:
                     filtered_jobs.append((job, match_score))
-            
+
             # Sort by match score (highest first)
             filtered_jobs.sort(key=lambda x: x[1], reverse=True)
             jobs = [job for job, score in filtered_jobs]
@@ -86,7 +87,7 @@ class JobService:
         """Convert Job model to dict for JSON serialization"""
         if not job:
             return None
-        
+
         return {
             "id": job.id,
             "user_id": job.user_id,

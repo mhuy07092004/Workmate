@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ProfileService:
     def __init__(self, db):
         self.profile_repo = ProfileRepository(db)
@@ -53,32 +54,32 @@ class ProfileService:
             if not profile:
                 logger.warning(f"Profile not found for user {user_id}")
                 return False
-            
+
             if not os.path.exists(resume_path):
                 logger.error(f"Resume file does not exist: {resume_path}")
                 return False
-            
+
             resume_text = self._extract_text_from_pdf(resume_path)
             if not resume_text:
                 logger.warning(f"Could not extract text from resume: {resume_path}")
                 return False
-            
+
             embedding = generate_embedding(resume_text)
             if not embedding:
                 logger.error(f"Failed to generate embedding for resume: {resume_path}")
                 return False
-            
+
             # Update profile with new embedding and text
             update_data = {
                 "resume_url": resume_path,
                 "resume_text": resume_text,
                 "resume_embedding": embedding
             }
-            
+
             self.profile_repo.update(user_id, update_data)
             logger.info(f"Successfully generated and stored embedding for user {user_id}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error generating embedding for user {user_id}: {str(e)}")
             return False
@@ -108,14 +109,14 @@ class ProfileService:
         profile = self.profile_repo.get_by_user_id(user_id)
         if not profile:
             return {"error": "Profile not found"}, 404
-        
+
         # Don't allow modifying user_id
         profile_data.pop("user_id", None)
-        
+
         # If resume file info is being updated, regenerate embedding
         if "resume_url" in profile_data:
             self._populate_resume_embedding(profile_data)
-        
+
         updated_profile = self.profile_repo.update(user_id, profile_data)
         return {"message": "Profile updated successfully.", "profile": self._serialize_profile(updated_profile)}, 200
 
@@ -130,7 +131,7 @@ class ProfileService:
         """Convert Profile model to dict for JSON serialization"""
         if not profile:
             return None
-        
+
         return {
             "id": profile.id,
             "user_id": profile.user_id,

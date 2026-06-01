@@ -3,6 +3,7 @@ import json
 from database import SessionLocal
 from utils.embeddings import generate_embedding
 
+
 def get_seed_jobs():
     """Generate ~50 synthetic job listings with variety"""
     roles = [
@@ -80,6 +81,7 @@ def get_seed_jobs():
 
     return jobs
 
+
 def get_seed_posts():
     return [
         {
@@ -103,6 +105,7 @@ def get_seed_posts():
             "content": "Our new product launch was a success! Thank you to everyone who made it possible.",
         },
     ]
+
 
 def get_seed_news():
     return [
@@ -132,6 +135,7 @@ def get_seed_news():
             "content": "Here are the most in-demand programming languages this year based on industry data.",
         },
     ]
+
 
 def seed_database(db):
     try:

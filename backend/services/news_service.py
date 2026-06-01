@@ -1,5 +1,6 @@
 from repositories.news_repository import NewsRepository
 
+
 class NewsService:
     def __init__(self, db):
         self.news_repo = NewsRepository(db)

@@ -218,7 +218,7 @@ function CandidateProfile() {
       newErrors.preferred_location = 'Preferred location is required'
     }
 
-    const expErrors = experiences.map((exp, idx) => {
+    const expErrors = experiences.map((exp, _idx) => {
       const expErr = {}
       if (!exp.position?.trim()) expErr.position = 'Position is required'
       if (!exp.company_name?.trim()) expErr.company_name = 'Company name is required'
@@ -271,15 +271,15 @@ function CandidateProfile() {
       }
 
       // Check if profile exists
-      let profileResponse
+      let _profileResponse
       try {
-        const existingProfile = await fetchFromAPI(`/profiles/${userId}`)
+        const _existingProfile = await fetchFromAPI(`/profiles/${userId}`)
         // Profile exists — UPDATE it (PUT)
-        profileResponse = await fetchFromAPI(`/profiles/${userId}`, 'PUT', profileData)
+        _profileResponse = await fetchFromAPI(`/profiles/${userId}`, 'PUT', profileData)
       } catch (err) {
         // Profile doesn't exist — CREATE it (POST)
         if (err.message.includes('404') || err.message.includes('not found')) {
-          profileResponse = await fetchFromAPI('/profiles/', 'POST', profileData)
+          _profileResponse = await fetchFromAPI('/profiles/', 'POST', profileData)
         } else {
           throw err
         }

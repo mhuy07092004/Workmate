@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from database import Base
 
+
 class EmployerProfile(Base):
     __tablename__ = "employer_profiles"
 

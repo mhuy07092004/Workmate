@@ -9,6 +9,7 @@ from jose import JWTError
 
 security = HTTPBearer()
 
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
@@ -22,17 +23,18 @@ def get_current_user(
             detail="Invalid authentication credentials"
         )
 
+
 class AuthService:
     def __init__(self, db):
         self.user_repo = UserRepository(db)
-    
+
     def register(self, data: dict):
         """
         Register a new user with email and password validation.
         Returns: (response_dict, status_code)
         """
         required_fields = ["email", "password", "full_name", "role"]
-        
+
         for field in required_fields:
             if not data.get(field) or not str(data[field]).strip():
                 return {"error": f"{field} is required."}, 400
@@ -52,7 +54,7 @@ class AuthService:
 
         user = self.user_repo.save(user_data)
         return {"message": "User registered successfully."}, 201
-    
+
     def _create_access_token(self, user):
         """Create JWT access token with user info."""
         payload = {
@@ -62,8 +64,8 @@ class AuthService:
             "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         }
         encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt    
-    
+        return encoded_jwt
+
     def authenticate(self, data: dict):
         """
         Authenticate user with email and password.
@@ -71,7 +73,7 @@ class AuthService:
         On success: {"access_token": "<jwt_token>"}
         """
         required_fields = ["email", "password"]
-        
+
         for field in required_fields:
             if not data.get(field) or not str(data[field]).strip():
                 return {"error": f"{field} is required."}, 400

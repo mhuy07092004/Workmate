@@ -1,6 +1,7 @@
 from models.post import Post
 from sqlalchemy import select
 
+
 class PostRepository:
     def __init__(self, db):
         self.db = db
@@ -12,10 +13,10 @@ class PostRepository:
     def get_by_id(self, id):
         post = self.db.query(Post).filter(Post.id == id).first()
         return post.to_dict() if post else None
-    
+
     def get_by_author_id(self, author_id: int) -> list[Post]:
         return self.db.execute(select(Post).where(Post.author_id == author_id)).scalars().all()
-    
+
     def save(self, post_data: dict) -> Post:
         post = Post(**post_data)
         self.db.add(post)
@@ -40,7 +41,7 @@ class PostRepository:
         self.db.delete(post)
         self.db.commit()
         return post
-    
+
     def add_comment(self, comment_data: dict):
         from models.comment import Comment
         comment = Comment(**comment_data)
