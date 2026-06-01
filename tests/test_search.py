@@ -254,3 +254,97 @@ class TestS05_SearchCandidateCompanyProfile:
         # Use the same attribute name set by make_profile ("preferred_mode", not "preferred_working_mode")
         matching = [p for p in profiles if p.preferred_working_mode == "Remote"]
         assert len(matching) == 1
+
+class TestNR36_WorkArrangementFilter:
+    """NR3.6 – Filter job listings by work arrangement (Remote / On-site / Hybrid)"""
+
+    def test_filter_remote_jobs(self):
+        """Filter work_arrangement=Remote returns only Remote jobs"""
+        from services.job_service import JobService
+        db = MagicMock()
+        svc = JobService(db)
+        svc.job_repo = MagicMock()
+        remote_job = make_job(1, title="Backend Engineer")
+        remote_job.work_arrangement = "Remote"
+        svc.job_repo.search.return_value = [remote_job]
+        result, status = svc.search_jobs({"work_arrangement": "Remote"})
+        assert status == 200
+        assert len(result["jobs"]) == 1
+        assert result["jobs"][0]["work_arrangement"] == "Remote"
+
+    def test_filter_onsite_jobs(self):
+        """Filter work_arrangement=On-site returns only On-site jobs"""
+        from services.job_service import JobService
+        db = MagicMock()
+        svc = JobService(db)
+        svc.job_repo = MagicMock()
+        onsite_job = make_job(2, title="Office Manager")
+        onsite_job.work_arrangement = "On-site"
+        svc.job_repo.search.return_value = [onsite_job]
+        result, status = svc.search_jobs({"work_arrangement": "On-site"})
+        assert status == 200
+        assert result["jobs"][0]["work_arrangement"] == "On-site"
+
+    def test_filter_hybrid_jobs(self):
+        """Filter work_arrangement=Hybrid returns only Hybrid jobs"""
+        from services.job_service import JobService
+        db = MagicMock()
+        svc = JobService(db)
+        svc.job_repo = MagicMock()
+        hybrid_job = make_job(3, title="Product Manager")
+        hybrid_job.work_arrangement = "Hybrid"
+        svc.job_repo.search.return_value = [hybrid_job]
+        result, status = svc.search_jobs({"work_arrangement": "Hybrid"})
+        assert status == 200
+        assert result["jobs"][0]["work_arrangement"] == "Hybrid"
+
+    def test_filter_work_arrangement_no_results(self):
+        """Filter that matches nothing returns empty list"""
+        from services.job_service import JobService
+        db = MagicMock()
+        svc = JobService(db)
+        svc.job_repo = MagicMock()
+        svc.job_repo.search.return_value = []
+        result, status = svc.search_jobs({"work_arrangement": "Remote"})
+        assert status == 200
+        assert result["jobs"] == []
+
+    def test_keyword_plus_work_arrangement_filter(self):
+        """Combine keyword search with work_arrangement filter"""
+        from services.job_service import JobService
+        db = MagicMock()
+        svc = JobService(db)
+        svc.job_repo = MagicMock()
+        job = make_job(1, title="Data Analyst",
+                       description="Analyse data pipelines", requirements="SQL, Python")
+        job.work_arrangement = "Remote"
+        svc.job_repo.search.return_value = [job]
+        result, status = svc.search_jobs({"keyword": "data analyst", "work_arrangement": "Remote"})
+        assert status == 200
+        assert len(result["jobs"]) >= 1
+        assert result["jobs"][0]["work_arrangement"] == "Remote"
+
+    def test_work_arrangement_filter_passed_to_repo(self):
+        """work_arrangement key is forwarded to repository search() unchanged"""
+        from repositories.job_repository import JobRepository
+        db = MagicMock()
+        repo = JobRepository(db)
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = []
+        db.execute.return_value = mock_result
+        repo.search({"work_arrangement": "Remote"})
+        db.execute.assert_called_once()
+
+    def test_all_valid_arrangements_accepted(self):
+        """All three valid work arrangements are accepted without error"""
+        from services.job_service import JobService
+        for arrangement in ["Remote", "On-site", "Hybrid"]:
+            db = MagicMock()
+            svc = JobService(db)
+            svc.job_repo = MagicMock()
+            job = make_job(1)
+            job.work_arrangement = arrangement
+            svc.job_repo.search.return_value = [job]
+            result, status = svc.search_jobs({"work_arrangement": arrangement})
+            assert status == 200
+            assert result["jobs"][0]["work_arrangement"] == arrangement
