@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.job_service import JobService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -14,6 +15,8 @@ router = APIRouter(tags=["job"])
 
 
 @router.get("/")
+
+
 def get_all_jobs(db = Depends(get_db)):
     """
     Retrieve all jobs.
@@ -24,6 +27,8 @@ def get_all_jobs(db = Depends(get_db)):
 
 
 @router.get("/{job_id}")
+
+
 def get_job(job_id: int, db = Depends(get_db)):
     """
     Retrieve a job post by job ID.
@@ -36,10 +41,12 @@ def get_job(job_id: int, db = Depends(get_db)):
 
 
 @router.post("/")
+
+
 def create_job(job_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new job post.
-    
+
     Expected JSON:
     {
         "title": "Senior Software Engineer",
@@ -52,7 +59,7 @@ def create_job(job_dict: dict, db = Depends(get_db), current_user = Depends(get_
         "salary_min": 80000,
         "salary_max": 120000
     }
-    
+
     Note: user_id is automatically set from the authenticated user.
     """
     job_dict["user_id"] = current_user.get("user_id")
@@ -64,10 +71,12 @@ def create_job(job_dict: dict, db = Depends(get_db), current_user = Depends(get_
 
 
 @router.put("/{job_id}")
+
+
 def update_job(job_id: int, job_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Update an existing job post by job ID.
-    
+
     Only the authenticated job owner (employer) can update their job.
     """
     service = JobService(db)
@@ -78,10 +87,12 @@ def update_job(job_id: int, job_dict: dict, db = Depends(get_db), current_user =
 
 
 @router.delete("/{job_id}")
+
+
 def delete_job(job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a job by ID.
-    
+
     Only the authenticated job owner (employer) can delete their job.
     """
     service = JobService(db)
@@ -92,10 +103,12 @@ def delete_job(job_id: int, db = Depends(get_db), current_user = Depends(get_cur
 
 
 @router.post("/search")
+
+
 def search_jobs(filters: dict, db = Depends(get_db)):
     """
     Search jobs by keyword and filters.
-    
+
     Expected JSON:
     {
         "keyword": "python developer",
@@ -106,7 +119,7 @@ def search_jobs(filters: dict, db = Depends(get_db)):
         "salary_max": 150000,
         "company": "TechCorp"
     }
-    
+
     All filters are optional. Keyword search uses fuzzy matching with typo tolerance.
     """
     service = JobService(db)

@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.user_service import UserService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -14,6 +15,8 @@ router = APIRouter(tags=["user"])
 
 
 @router.get("/")
+
+
 def show_all(db = Depends(get_db)):
     """
     Get all users.
@@ -23,6 +26,8 @@ def show_all(db = Depends(get_db)):
 
 
 @router.get("/{user_id}")
+
+
 def get_user(user_id: int, db = Depends(get_db)):
     """
     Get a specific user by ID.
@@ -35,6 +40,8 @@ def get_user(user_id: int, db = Depends(get_db)):
 
 
 @router.post("/")
+
+
 def create_user(user_data: dict, db = Depends(get_db)):
     """
     Create a new user.
@@ -54,6 +61,8 @@ def create_user(user_data: dict, db = Depends(get_db)):
 
 
 @router.put("/{user_id}")
+
+
 def update_user(user_id: int, user_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Update a user.
@@ -66,6 +75,8 @@ def update_user(user_id: int, user_data: dict, db = Depends(get_db), current_use
 
 
 @router.delete("/{user_id}")
+
+
 def delete_user(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a user.

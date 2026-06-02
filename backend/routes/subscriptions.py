@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.subscription_service import SubscriptionService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -13,6 +14,8 @@ def get_db():
 router = APIRouter(tags=["subscription"])
 
 @router.get("/")
+
+
 def get_all_subscriptions(db = Depends(get_db)):
     """
     Retrieve all subscriptions (admin only).
@@ -22,6 +25,8 @@ def get_all_subscriptions(db = Depends(get_db)):
     return result
 
 @router.get("/{subscription_id}")
+
+
 def get_subscription(subscription_id: int, db = Depends(get_db)):
     """
     Retrieve a subscription by subscription ID.
@@ -33,6 +38,8 @@ def get_subscription(subscription_id: int, db = Depends(get_db)):
     return result
 
 @router.get("/user/{user_id}")
+
+
 def get_user_subscription(user_id: int, db = Depends(get_db)):
     """
     Retrieve subscription for a specific user.
@@ -44,6 +51,8 @@ def get_user_subscription(user_id: int, db = Depends(get_db)):
     return result
 
 @router.post("/")
+
+
 def create_subscription(subscription_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new subscription.
@@ -55,6 +64,8 @@ def create_subscription(subscription_dict: dict, db = Depends(get_db), current_u
     return result
 
 @router.put("/{user_id}")
+
+
 def upgrade_subscription(user_id: int, subscription_dict: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Upgrade or change a user's subscription tier/period.
@@ -66,6 +77,8 @@ def upgrade_subscription(user_id: int, subscription_dict: dict, db = Depends(get
     return result
 
 @router.delete("/{user_id}")
+
+
 def cancel_subscription(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Cancel a user's subscription.

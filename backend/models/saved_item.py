@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from database import Base
 
+
 class SavedItem(Base):
     __tablename__ = "saved_items"
 

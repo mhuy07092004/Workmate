@@ -1,16 +1,17 @@
 from models.job import Job
 from sqlalchemy.sql import select
 
+
 class JobRepository:
     def __init__(self, db):
         self.db = db
 
     def get_all(self) -> list[Job]:
         return self.db.execute(select(Job)).scalars().all()
-    
+
     def get_by_id(self, id: int):
         return self.db.execute(select(Job).where(Job.id == id)).scalars().first()
-    
+
     def get_all_with_embeddings(self) -> list:
         """Get all jobs that have embeddings generated"""
         query = select(Job).where(Job.job_embedding != None)
@@ -49,7 +50,7 @@ class JobRepository:
     def search(self, filters: dict) -> list[Job]:
         """
         Search jobs by filters (NOT keyword - that's done in service with fuzzy matching)
-        
+
         Filters applied:
         - location: Substring match
         - job_type: Exact match

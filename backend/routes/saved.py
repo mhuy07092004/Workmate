@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.saved_service import SavedService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -14,6 +15,8 @@ router = APIRouter(tags=["saved"])
 
 
 @router.get("/user/{user_id}")
+
+
 def get_saved_items(user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Get all saved items for a user.
@@ -24,6 +27,8 @@ def get_saved_items(user_id: int, db = Depends(get_db), current_user = Depends(g
 
 
 @router.post("/")
+
+
 def save_item(saved_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Save a job or candidate.
@@ -42,6 +47,8 @@ def save_item(saved_data: dict, db = Depends(get_db), current_user = Depends(get
 
 
 @router.delete("/{saved_id}")
+
+
 def delete_saved_item(saved_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a saved item.
@@ -53,6 +60,8 @@ def delete_saved_item(saved_id: int, db = Depends(get_db), current_user = Depend
     return result
 
 @router.get("/check/{user_id}/{job_id}")
+
+
 def check_if_saved(user_id: int, job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """Check if a job is saved by current user"""
     service = SavedService(db)
@@ -60,6 +69,8 @@ def check_if_saved(user_id: int, job_id: int, db = Depends(get_db), current_user
     return result
 
 @router.post("/job/{user_id}/{job_id}")
+
+
 def toggle_save_job(user_id: int, job_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """Toggle save/unsave a job"""
     service = SavedService(db)

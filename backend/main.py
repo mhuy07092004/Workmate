@@ -8,7 +8,6 @@ from database import SessionLocal
 from routes import employer_profiles, recommendations
 
 
-
 app = FastAPI(title="Workmate API")
 
 app.add_middleware(
@@ -31,6 +30,8 @@ os.makedirs("uploads/profiles", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.on_event("startup")
+
+
 def on_startup():
     init_db()
     db = SessionLocal()

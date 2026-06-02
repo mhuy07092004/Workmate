@@ -32,7 +32,6 @@ function CandidateFilter({
   onFilterChange,
   onClearFilters,
   showFilters,
-  setShowFilters,
   variant = 'page',
   suppressFields = [],
 }) {

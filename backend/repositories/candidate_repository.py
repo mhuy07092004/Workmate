@@ -3,6 +3,7 @@ from models.user import User
 from sqlalchemy.sql import select
 from fastapi import HTTPException
 
+
 class CandidateRepository:
     def __init__(self, db):
         self.db = db
@@ -27,7 +28,7 @@ class CandidateRepository:
         candidate = self.get_candidate_by_user_id(user_id)
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
-        
+
         candidate.resume_embedding = embedding
         self.db.commit()
         self.db.refresh(candidate)
@@ -38,7 +39,7 @@ class CandidateRepository:
         candidate = self.get_candidate_by_user_id(user_id)
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
-        
+
         candidate.resume_text = resume_text
         self.db.commit()
         self.db.refresh(candidate)
@@ -47,7 +48,7 @@ class CandidateRepository:
     def search(self, filters: dict) -> list:
         """
         Search candidates by filters (NOT keyword - that's done in service with fuzzy matching)
-        
+
         Filters applied:
           - location: Substring match
           - experience_level: Exact match (if implemented in Profile model)
@@ -55,17 +56,17 @@ class CandidateRepository:
           - major: Substring match
         """
         query = select(Profile)
-        
+
         # Apply filters (keyword search is done in service with fuzzy matching)
         if filters.get("location"):
             query = query.where(Profile.location.ilike(f"%{filters['location']}%"))
-        
+
         if filters.get("degree_type"):
             query = query.where(Profile.education_level == filters['degree_type'])
-        
+
         if filters.get("major"):
             query = query.where(Profile.major.ilike(f"%{filters['major']}%"))
-        
+
         return self.db.execute(query).scalars().all()
 
     def get_all(self) -> list:

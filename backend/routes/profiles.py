@@ -5,6 +5,7 @@ from services.auth_service import get_current_user
 import os
 from datetime import datetime
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -26,6 +27,8 @@ os.makedirs(PROFILE_DIR, exist_ok=True)
 
 
 @router.get("/{user_id}")
+
+
 def get_profile(user_id: int, db=Depends(get_db)):
     service = ProfileService(db)
     result, status = service.get_profile(user_id)
@@ -35,6 +38,8 @@ def get_profile(user_id: int, db=Depends(get_db)):
 
 
 @router.post("/upload/{user_id}")
+
+
 async def upload_files(
     user_id: int,
     resume: UploadFile = File(None),
@@ -84,6 +89,8 @@ async def upload_files(
 
 
 @router.post("/")
+
+
 def create_profile(profile_data: dict, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.create_profile(profile_data)
@@ -93,6 +100,8 @@ def create_profile(profile_data: dict, db=Depends(get_db), current_user=Depends(
 
 
 @router.put("/{user_id}")
+
+
 def update_profile(user_id: int, profile_data: dict, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.update_profile(user_id, profile_data)
@@ -102,6 +111,8 @@ def update_profile(user_id: int, profile_data: dict, db=Depends(get_db), current
 
 
 @router.delete("/{user_id}")
+
+
 def delete_profile(user_id: int, db=Depends(get_db), current_user=Depends(get_current_user)):
     service = ProfileService(db)
     result, status = service.delete_profile(user_id)

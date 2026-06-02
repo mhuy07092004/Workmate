@@ -14,7 +14,7 @@ function JobCard({ job, isSaved = false, onSave = () => { } }) {
       ? job.workArrangement
       : null
 
-  const handleSaveClick = (event) => {
+  const _handleSaveClick = (event) => {
     event.preventDefault()
     event.stopPropagation()
     onSave(job.id)
@@ -69,6 +69,7 @@ function JobCard({ job, isSaved = false, onSave = () => { } }) {
           )}
         </div>
       </Link>
+      <SaveJob isSaved={isSaved} onClick={_handleSaveClick} />
     </article>
   )
 }

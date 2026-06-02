@@ -1,5 +1,6 @@
 from repositories.employer_profile_repository import EmployerProfileRepository
 
+
 class EmployerProfileService:
     def __init__(self, db):
         self.profile_repo = EmployerProfileRepository(db)

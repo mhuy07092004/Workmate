@@ -16,7 +16,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # loads all model classes - checks the database - creates tables that do not already exist
+
+
 def init_db():
     from models import user, job, news, post, application, profile, saved_item, comment
     Base.metadata.create_all(bind=engine)
-    

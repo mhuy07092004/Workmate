@@ -3,6 +3,7 @@ from database import SessionLocal
 from services.post_service import PostService
 from services.auth_service import get_current_user
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -14,6 +15,8 @@ router = APIRouter(tags=["post"])
 
 
 @router.get("/")
+
+
 def get_posts(db = Depends(get_db)):
     """
     Retrieve all posts.
@@ -24,6 +27,8 @@ def get_posts(db = Depends(get_db)):
 
 
 @router.get("/{post_id}")
+
+
 def get_post(post_id: int, db = Depends(get_db)):
     """
     Retrieve a specific post by ID.
@@ -36,6 +41,8 @@ def get_post(post_id: int, db = Depends(get_db)):
 
 
 @router.post("/")
+
+
 def create_post(post_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Create a new post.
@@ -54,6 +61,8 @@ def create_post(post_data: dict, db = Depends(get_db), current_user = Depends(ge
 
 
 @router.put("/{post_id}")
+
+
 def update_post(post_id: int, post_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Update an existing post.
@@ -66,6 +75,8 @@ def update_post(post_id: int, post_data: dict, db = Depends(get_db), current_use
 
 
 @router.delete("/{post_id}")
+
+
 def delete_post(post_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Delete a post by ID.
@@ -78,6 +89,8 @@ def delete_post(post_id: int, db = Depends(get_db), current_user = Depends(get_c
 
 
 @router.post("/{post_id}/comments")
+
+
 def add_comment(post_id: int, comment_data: dict, db = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Add a comment to a post.

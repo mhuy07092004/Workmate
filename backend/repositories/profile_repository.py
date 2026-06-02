@@ -1,6 +1,7 @@
 from models.profile import Profile
 from sqlalchemy import select
 
+
 class ProfileRepository:
     def __init__(self, db):
         self.db = db
@@ -14,7 +15,7 @@ class ProfileRepository:
             .scalars()
             .first()
         )
-    
+
     def get_by_user_phone(self, phone: int):
         return (
             self.db.execute(select(Profile).where(Profile.phone == phone))

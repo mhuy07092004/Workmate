@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class RecommendationService:
     def __init__(self, db):
         self.job_repo = JobRepository(db)
@@ -24,12 +25,12 @@ class RecommendationService:
         all_candidates = self.profile_repo.get_all()
         candidates_with_embedding = len(candidates)
         total_candidates = len(all_candidates)
-        
+
         logger.info(f"Found {candidates_with_embedding} candidates with embeddings out of {total_candidates} total")
-        
+
         if candidates_with_embedding == 0:
             logger.warning(f"No candidates with resume embeddings found for job {job_id}. Total candidates: {total_candidates}")
-        
+
         scored = []
         for c in candidates:
             if not c.resume_embedding:
