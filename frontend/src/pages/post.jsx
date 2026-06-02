@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import Post from '../components/Posts/Post.jsx'
@@ -74,11 +74,7 @@ function PostsPage() {
   const role = getCurrentUserRole()
   const isEmployer = role === 'employer'
 
-  useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  async function fetchPosts() {
+  const fetchPosts = useCallback(async () => {
     try {
       setIsLoadingPosts(true)
       setLoadError('')
@@ -91,7 +87,13 @@ function PostsPage() {
     } finally {
       setIsLoadingPosts(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchPosts()
+    })
+  }, [fetchPosts])
 
   const handleCreatePost = async (event) => {
     event.preventDefault()
