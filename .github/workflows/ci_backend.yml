@@ -2,13 +2,13 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, ttvt098-patch-1]
     paths:
       - 'backend/**'
       - 'tests/**'
       - '.github/workflows/ci_backend.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, ttvt098-patch-1]
     paths:
       - 'backend/**'
       - 'tests/**'
@@ -43,7 +43,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ttvt098-patch-1')
     
     steps:
       - uses: actions/checkout@v4
