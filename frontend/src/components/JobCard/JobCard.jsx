@@ -7,7 +7,7 @@
 import { Link } from 'react-router-dom'
 import SaveJob from '../Button/SaveJob.jsx'
 
-function JobCard({ job, isSaved: _isSaved = false, onSave = () => { } }) {
+function JobCard({ job, isSaved = false, onSave = () => { } }) {
   const employmentLabel = job.employmentType || job.type
   const arrangementLabel =
     job.workArrangement && job.workArrangement !== job.employmentType
@@ -69,6 +69,7 @@ function JobCard({ job, isSaved: _isSaved = false, onSave = () => { } }) {
           )}
         </div>
       </Link>
+      <SaveJob isSaved={isSaved} onClick={_handleSaveClick} />
     </article>
   )
 }
