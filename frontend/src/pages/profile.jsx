@@ -76,10 +76,33 @@ function CandidateProfile() {
   const [profilePictureError, setProfilePictureError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [resumeUrl, setResumeUrl] = useState(null)
+  const [userData, setUserData] = useState({ full_name: '', email: '' })
 
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
   const userId = getCurrentUserID()
+
+  const fetchUserData = async () => {
+    try {
+      if (!userId) return
+      const response = await fetchFromAPI(`/users/${userId}`)
+      console.log('User API Response:', response) // DEBUG
+
+      // API wraps user in { user: {...} }
+      const user = response.user || response
+      setUserData({
+        full_name: user.full_name || '',
+        email: user.email || '',
+      })
+    } catch (err) {
+      console.error('Error loading user data:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchUserData()
+    loadUserData()
+  }, [userId])
 
   useEffect(() => {
     if (!formData.profile_picture_file) {
@@ -180,15 +203,15 @@ function CandidateProfile() {
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.full_name?.trim()) {
-      newErrors.full_name = 'Full name is required'
-    }
+    // if (!formData.full_name?.trim()) {
+    //   newErrors.full_name = 'Full name is required'
+    // }
 
-    if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email is not valid'
-    }
+    // if (!formData.email?.trim()) {
+    //   newErrors.email = 'Email is required'
+    // } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    //   newErrors.email = 'Email is not valid'
+    // }
 
     if (!formData.phone?.trim()) {
       newErrors.phone = 'Phone number is required'
@@ -237,6 +260,186 @@ function CandidateProfile() {
     return Object.keys(newErrors).length === 0 && !expErrors.some(err => Object.keys(err).length > 0)
   }
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault()
+
+  //   if (!validateForm()) {
+  //     return
+  //   }
+
+  //   try {
+  //     setIsLoading(true)
+  //     setErrors({})
+
+  //     // Prepare profile data
+  //     const profileData = {
+  //       user_id: Number(userId),
+  //       full_name: userData.full_name,  // From fetched user data, not editable form
+  //       email: userData.email,  
+  //       phone: formData.phone,
+  //       education_level: formData.education_level,
+  //       major: formData.major,
+  //       school: formData.school,
+  //       about_you: formData.about_you,
+  //       skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
+  //       preferred_working_mode: formData.preferred_working_mode,
+  //       preferred_location: formData.preferred_location,
+  //       experiences: experiences.map(exp => ({
+  //         position: exp.position,
+  //         company_name: exp.company_name,
+  //         from_date: exp.from_date,
+  //         until_date: exp.until_date,
+  //         is_currently_working: exp.is_currently_working,
+  //       })),
+  //     }
+
+  //     // Check if profile exists
+  //     let profileResponse
+  //     try {
+  //       const existingProfile = await fetchFromAPI(`/profiles/${userId}`)
+  //       // Profile exists — UPDATE it (PUT)
+  //       profileResponse = await fetchFromAPI(`/profiles/${userId}`, 'PUT', profileData)
+  //     } catch (err) {
+  //       // Profile doesn't exist — CREATE it (POST)
+  //       if (err.message.includes('404') || err.message.includes('not found')) {
+  //         profileResponse = await fetchFromAPI('/profiles/', 'POST', profileData)
+  //       } else {
+  //         throw err
+  //       }
+  //     }
+
+  //     // Upload files if present
+  //     if (formData.resume_file || formData.profile_picture_file) {
+  //       const formDataForUpload = new FormData()
+  //       if (formData.resume_file) {
+  //         formDataForUpload.append('resume', formData.resume_file)
+  //       }
+  //       if (formData.profile_picture_file) {
+  //         formDataForUpload.append('profile_picture', formData.profile_picture_file)
+  //       }
+
+  //       const token = getAuthToken()
+  //       const uploadResponse = await fetch(`${API_BASE_URL}/profiles/upload/${userId}`, {
+  //         method: 'POST',
+  //         headers: {
+  //           ...(token && { 'Authorization': `Bearer ${token}` }),
+  //         },
+  //         body: formDataForUpload,
+  //       })
+
+  //       if (!uploadResponse.ok) {
+  //         throw new Error('File upload failed')
+  //       }
+  //     }
+
+  //     setErrors({})
+  //     alert('Profile saved successfully!')
+  //     await loadUserData()
+  //   } catch (err) {
+  //     console.error('Error saving profile:', err)
+  //     setErrors({ form: err.message })
+  //   } finally {
+  //     setIsLoading(false)
+  //   }
+  // }
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault()
+
+  //   if (!validateForm()) {
+  //     return
+  //   }
+
+  //   try {
+  //     setIsLoading(true)
+  //     setErrors({})
+
+  //     // Prepare profile data
+  //     const profileData = {
+  //       user_id: Number(userId),
+  //       full_name: userData.full_name,  // From fetched user data, not editable form
+  //       email: userData.email,
+  //       phone: formData.phone,
+  //       education_level: formData.education_level,
+  //       major: formData.major,
+  //       school: formData.school,
+  //       about_you: formData.about_you,
+  //       skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
+  //       preferred_working_mode: formData.preferred_working_mode,
+  //       preferred_location: formData.preferred_location,
+  //       experiences: experiences.map(exp => ({
+  //         position: exp.position,
+  //         company_name: exp.company_name,
+  //         from_date: exp.from_date,
+  //         until_date: exp.until_date,
+  //         is_currently_working: exp.is_currently_working,
+  //       })),
+  //     }
+
+  //     // Check if profile exists
+  //     let profileResponse
+  //     try {
+  //       const existingProfile = await fetchFromAPI(`/profiles/${userId}`)
+  //       // Profile exists — UPDATE it (PUT)
+  //       profileResponse = await fetchFromAPI(`/profiles/${userId}`, 'PUT', profileData)
+  //     } catch (err) {
+  //       // Profile doesn't exist — CREATE it (POST)
+  //       if (err.message.includes('404') || err.message.includes('not found')) {
+  //         profileResponse = await fetchFromAPI('/profiles/', 'POST', profileData)
+  //       } else {
+  //         throw err
+  //       }
+  //     }
+
+  //     // Upload files if present
+  //     if (formData.resume_file || formData.profile_picture_file) {
+  //       const formDataForUpload = new FormData()
+  //       if (formData.resume_file) {
+  //         formDataForUpload.append('resume', formData.resume_file)
+  //       }
+  //       if (formData.profile_picture_file) {
+  //         formDataForUpload.append('profile_picture', formData.profile_picture_file)
+  //       }
+
+  //       const token = getAuthToken()
+  //       const uploadResponse = await fetch(`${API_BASE_URL}/profiles/upload/${userId}`, {
+  //         method: 'POST',
+  //         headers: {
+  //           ...(token && { 'Authorization': `Bearer ${token}` }),
+  //         },
+  //         body: formDataForUpload,
+  //       })
+
+  //       console.log('Upload response status:', uploadResponse.status) // DEBUG
+  //       const uploadData = await uploadResponse.json()
+  //       console.log('Upload response data:', uploadData) // DEBUG
+
+  //       if (!uploadResponse.ok) {
+  //         throw new Error(`File upload failed: ${uploadData.detail || uploadData.error || 'Unknown error'}`)
+  //       }
+
+  //       // ✅ FIX: Update profile with file URLs returned from backend
+  //       if (uploadData.resume_url || uploadData.profile_picture_url) {
+  //         const updateData = {}
+  //         if (uploadData.resume_url) updateData.resume_url = uploadData.resume_url
+  //         if (uploadData.profile_picture_url) updateData.profile_picture_url = uploadData.profile_picture_url
+
+  //         await fetchFromAPI(`/profiles/${userId}`, 'PUT', updateData)
+  //         console.log('Profile updated with file URLs') // DEBUG
+  //       }
+  //     }
+
+  //     setErrors({})
+  //     alert('Profile saved successfully!')
+  //     await loadUserData()
+  //   } catch (err) {
+  //     console.error('Error saving profile:', err)
+  //     setErrors({ form: err.message })
+  //   } finally {
+  //     setIsLoading(false)
+  //   }
+  // }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -251,8 +454,8 @@ function CandidateProfile() {
       // Prepare profile data
       const profileData = {
         user_id: Number(userId),
-        full_name: formData.full_name,
-        email: formData.email,
+        full_name: userData.full_name,
+        email: userData.email,
         phone: formData.phone,
         education_level: formData.education_level,
         major: formData.major,
@@ -274,10 +477,8 @@ function CandidateProfile() {
       let profileResponse
       try {
         const existingProfile = await fetchFromAPI(`/profiles/${userId}`)
-        // Profile exists — UPDATE it (PUT)
         profileResponse = await fetchFromAPI(`/profiles/${userId}`, 'PUT', profileData)
       } catch (err) {
-        // Profile doesn't exist — CREATE it (POST)
         if (err.message.includes('404') || err.message.includes('not found')) {
           profileResponse = await fetchFromAPI('/profiles/', 'POST', profileData)
         } else {
@@ -304,13 +505,37 @@ function CandidateProfile() {
           body: formDataForUpload,
         })
 
+        console.log('Upload response status:', uploadResponse.status)
+        const uploadData = await uploadResponse.json()
+        console.log('Upload response data:', uploadData)
+
         if (!uploadResponse.ok) {
-          throw new Error('File upload failed')
+          throw new Error(`File upload failed: ${uploadData.detail || uploadData.error || 'Unknown error'}`)
+        }
+
+        // ✅ Update profile with returned URLs
+        if (uploadData.resume_url || uploadData.profile_picture_url) {
+          const updateData = {}
+          if (uploadData.resume_url) {
+            updateData.resume_url = uploadData.resume_url
+            // ✅ Set resumeUrl state immediately so it displays
+            setResumeUrl(uploadData.resume_url)
+            console.log('Resume URL set to:', uploadData.resume_url)
+          }
+          if (uploadData.profile_picture_url) {
+            updateData.profile_picture_url = uploadData.profile_picture_url
+          }
+
+          // Update the profile with these URLs
+          await fetchFromAPI(`/profiles/${userId}`, 'PUT', updateData)
+          console.log('Profile updated with file URLs')
         }
       }
 
       setErrors({})
       alert('Profile saved successfully!')
+
+      // Reload all data to refresh the UI
       await loadUserData()
     } catch (err) {
       console.error('Error saving profile:', err)
@@ -364,10 +589,12 @@ function CandidateProfile() {
         }
       }
     } catch (err) {
-      console.error('Error loading profile:', err)
+      // Silently ignore 404 (profile doesn't exist yet - first time creation)
+      if (!err.message.includes('not found') && !err.message.includes('404')) {
+        console.error('Error loading profile:', err)
+      }
     }
   }
-
   useEffect(() => {
     loadUserData()
   }, [userId])
@@ -409,7 +636,7 @@ function CandidateProfile() {
               Personal Information
             </h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <div className="flex flex-col col-span-1 md:col-span-2">
+              {/* <div className="flex flex-col col-span-1 md:col-span-2">
                 <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">
                   Full Name
                 </label>
@@ -422,8 +649,8 @@ function CandidateProfile() {
                   placeholder="Enter your full name"
                 />
                 {errors.full_name && <span className="text-xs text-red-500 mt-1">{errors.full_name}</span>}
-              </div>
-              <div className="flex flex-col">
+              </div> */}
+              {/* <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">
                   Email Address
                 </label>
@@ -436,6 +663,34 @@ function CandidateProfile() {
                   placeholder="your.email@example.com"
                 />
                 {errors.email && <span className="text-xs text-red-500 mt-1">{errors.email}</span>}
+              </div> */}
+
+              {/* Full Name - Read-only */}
+              <div className="flex flex-col col-span-1 md:col-span-2">
+                <label className="text-sm font-medium text-gray-700 mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={userData.full_name}
+                  className="px-3 py-2.5 border border-gray-300 rounded-md text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-500 mt-1">Managed by account settings</p>
+              </div>
+
+              {/* Email - Read-only */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1.5">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  value={userData.email}
+                  className="px-3 py-2.5 border border-gray-300 rounded-md text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-500 mt-1">Managed by account settings</p>
               </div>
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 mb-1.5 after:content-['_*'] after:text-red-500">

@@ -1,5 +1,6 @@
 from repositories.candidate_repository import CandidateRepository
 from repositories.job_repository import JobRepository
+from repositories.profile_repository import ProfileRepository
 from utils.embeddings import generate_embedding, calculate_cosine_similarity
 from fastapi import HTTPException
 from fuzzywuzzy import fuzz
@@ -8,6 +9,24 @@ class CandidateService:
     def __init__(self, db):
         self.candidate_repo = CandidateRepository(db)
         self.job_repo = JobRepository(db)
+        self.profile_repo = ProfileRepository(db)
+
+    def _matches_preferences(self, job, profile) -> bool:
+        """Check if job matches candidate preferences"""
+        if not profile:
+            return True
+        
+        # Location check - only if profile has a valid string location
+        if hasattr(profile, 'preferred_location') and isinstance(profile.preferred_location, str):
+            if job.location.lower() != profile.preferred_location.lower():
+                return False
+        
+        # Working mode check - only if profile has a valid string working mode
+        if hasattr(profile, 'preferred_working_mode') and isinstance(profile.preferred_working_mode, str):
+            if job.work_arrangement != profile.preferred_working_mode:
+                return False
+        
+        return True
 
     def get_recommended_jobs(self, user_id: int, limit: int = 10):
         """
@@ -25,15 +44,26 @@ class CandidateService:
             candidate = self.candidate_repo.get_candidate_with_resume_embedding(user_id)
             resume_embedding = candidate.resume_embedding
             
+            # Try to get profile for preference filtering, but don't fail if unavailable
+            try:
+                profile = self.profile_repo.get_by_user_id(user_id)
+            except:
+                profile = None
+            
             # Get all jobs with embeddings
             jobs = self.job_repo.get_all_with_embeddings()
             
-            if not jobs:
+            filtered_jobs = [
+                job for job in jobs
+                if self._matches_preferences(job, profile)
+            ]
+            
+            if not filtered_jobs:
                 return {"jobs": [], "message": "No jobs available with embeddings"}, 200
             
             # Calculate similarity for each job
             job_scores = []
-            for job in jobs:
+            for job in filtered_jobs:
                 similarity_score = calculate_cosine_similarity(
                     resume_embedding,
                     job.job_embedding
@@ -158,4 +188,18 @@ class CandidateService:
             filtered_candidates.sort(key=lambda x: x[1], reverse=True)
             candidates = [cand for cand, score in filtered_candidates]
 
-        return {"candidates": candidates}, 200
+        formatted_candidates = []
+        for c in candidates:
+            formatted_candidates.append({
+                "id": c.id,
+                "userId": c.user_id,
+                "fullName": c.full_name,
+                "location": c.preferred_location or "",
+                "jobApplied": c.major or "",  # Use major as a placeholder
+                "resume_url": c.resume_url,
+                "major": c.major,
+                "degree": c.education_level,
+                "experience": c.experiences,
+            })
+
+        return {"candidates": formatted_candidates}, 200

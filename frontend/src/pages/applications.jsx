@@ -168,7 +168,7 @@ function Applications() {
               company: job.company,
               location: job.location,
               employmentType: job.job_type,
-              workArrangement: job.job_type,
+              workArrangement: job.work_arrangement,
               postedTime: `Posted ${calculateDaysAgo(job.created_at)}`,
               salary:
                 job.salary_min && job.salary_max
@@ -318,7 +318,7 @@ function Applications() {
           company: job.company,
           location: job.location,
           employmentType: job.job_type,
-          workArrangement: 'On Site',
+          workArrangement: job.work_arrangement || 'On-site',
           postedTime: `Posted ${calculateDaysAgo(
             job.created_at
           )}`,

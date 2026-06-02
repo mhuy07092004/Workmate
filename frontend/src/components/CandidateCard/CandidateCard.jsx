@@ -20,9 +20,11 @@ function CandidateCard({
 
   // Safely normalize resume URL
   const resumeUrl = candidate.resume_url
-    ? `${API_BASE_URL}/${candidate.resume_url.replace(/^\/?uploads\//, 'uploads/')}`
+    ? candidate.resume_url.startsWith('http')
+      ? candidate.resume_url  // Already a full URL
+      : `${API_BASE_URL}/${candidate.resume_url.replace(/^\//, '')}`  // Relative path
     : null
-
+    
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value
 

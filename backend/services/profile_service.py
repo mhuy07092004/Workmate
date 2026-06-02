@@ -46,31 +46,39 @@ class ProfileService:
         except Exception as e:
             logger.error(f"Failed to generate embedding for resume {resume_path}: {str(e)}")
 
-    def generate_resume_embedding_for_user(self, user_id: int, resume_path: str):
-        """Generate and update resume embedding for an existing user's profile"""
+    def generate_resume_embedding_for_user(self, user_id: int, resume_filepath: str, resume_url: str):
+        """
+        Generate and update resume embedding for an existing user's profile.
+        
+        Args:
+            user_id: The user ID
+            resume_filepath: Local filesystem path to the resume PDF (used for extraction)
+            resume_url: Public URL to store in database (works in local + production)
+        """
         try:
             profile = self.profile_repo.get_by_user_id(user_id)
             if not profile:
                 logger.warning(f"Profile not found for user {user_id}")
                 return False
             
-            if not os.path.exists(resume_path):
-                logger.error(f"Resume file does not exist: {resume_path}")
+            # ✅ Use local filepath for file checks (works locally and in production)
+            if not os.path.exists(resume_filepath):
+                logger.error(f"Resume file does not exist: {resume_filepath}")
                 return False
             
-            resume_text = self._extract_text_from_pdf(resume_path)
+            resume_text = self._extract_text_from_pdf(resume_filepath)
             if not resume_text:
-                logger.warning(f"Could not extract text from resume: {resume_path}")
+                logger.warning(f"Could not extract text from resume: {resume_filepath}")
                 return False
             
             embedding = generate_embedding(resume_text)
             if not embedding:
-                logger.error(f"Failed to generate embedding for resume: {resume_path}")
+                logger.error(f"Failed to generate embedding for resume: {resume_filepath}")
                 return False
             
-            # Update profile with new embedding and text
+            # ✅ Store the PUBLIC URL in database (not the local filepath)
             update_data = {
-                "resume_url": resume_path,
+                "resume_url": resume_url,  # Public URL from BASE_URL
                 "resume_text": resume_text,
                 "resume_embedding": embedding
             }
@@ -82,7 +90,7 @@ class ProfileService:
         except Exception as e:
             logger.error(f"Error generating embedding for user {user_id}: {str(e)}")
             return False
-
+    
     def get_profile(self, user_id: int):
         """Get profile by user ID"""
         profile = self.profile_repo.get_by_user_id(user_id)

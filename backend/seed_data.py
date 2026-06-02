@@ -6,6 +6,7 @@ from utils.embeddings import generate_embedding
 def get_seed_jobs():
     """Generate ~50 synthetic job listings with variety"""
     roles = [
+        ("Software Engineer", ["Python", "JavaScript", "SQL", "Git"]),
         ("Backend Engineer", ["Python", "PostgreSQL", "Docker", "AWS"]),
         ("Frontend Developer", ["React", "JavaScript", "CSS", "Git"]),
         ("Full Stack Engineer", ["Node.js", "React", "MongoDB", "TypeScript"]),
@@ -24,12 +25,12 @@ def get_seed_jobs():
     ]
 
     locations = [
-        "San Francisco, CA", "New York, NY", "Austin, TX",
-        "Seattle, WA", "Los Angeles, CA", "Remote",
-        "Boston, MA", "Chicago, IL", "Denver, CO", "Toronto, CA"
+        "Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide",
+        "Canberra", "Hobart", "Darwin", "Gold Coast", "Newcastle", "Remote"
     ]
 
     job_types = ["Full-time", "Contract", "Remote", "Hybrid"]
+    work_arrangements = ["On-site", "Remote", "Hybrid"]
 
     salaries = [
         (70000, 100000),
@@ -40,11 +41,32 @@ def get_seed_jobs():
     ]
 
     descriptions = [
-        "Join a fast-growing team working on scalable systems.",
-        "We are looking for passionate engineers to build modern products.",
-        "Work with cutting-edge technologies in a collaborative environment.",
-        "Help us design and build high-quality software solutions.",
-        "Opportunity to work on impactful projects with global reach.",
+        # Diverse descriptions for better search differentiation
+        "Join our software team to build scalable systems and drive innovation.",
+        "Looking for passionate developers to create modern applications using latest tech.",
+        "Work on enterprise software solutions in a collaborative environment.",
+        "Help design and build high-quality software products for millions of users.",
+        "Opportunity to work on impactful software projects with talented engineers.",
+        "Build robust backend systems and advance your career with cutting-edge tools.",
+        "Create next-generation web applications in a fast-paced startup environment.",
+        "Develop frontend interfaces using React and modern web technologies.",
+        "Join our mobile team to build iOS and Android applications.",
+        "Work on machine learning and AI models with Python and TensorFlow.",
+        "Design cloud infrastructure and ensure system reliability at scale.",
+        "Automate deployment pipelines and manage containerized applications.",
+        "Create beautiful user interfaces and improve user experience.",
+        "Write test cases and ensure quality through automated testing.",
+        "Lead technical architecture and cloud migration projects.",
+        "Build APIs and microservices for distributed systems.",
+        "Analyze data and create business intelligence dashboards.",
+        "Implement DevOps practices and CI/CD pipelines.",
+        "Design and develop responsive web applications.",
+        "Work on artificial intelligence and natural language processing.",
+        "Manage cloud infrastructure on AWS, Azure, or GCP.",
+        "Build real-time applications using Node.js and WebSockets.",
+        "Create data pipelines and ETL processes for big data.",
+        "Develop mobile apps with React Native and native frameworks.",
+        "Lead product development and technical strategy.",
     ]
 
     jobs = []
@@ -56,6 +78,12 @@ def get_seed_jobs():
         job_type = job_types[i % len(job_types)]
         salary_min, salary_max = salaries[i % len(salaries)]
         description = descriptions[i % len(descriptions)]
+        work_arrangement = work_arrangements[i % len(work_arrangements)]
+
+        # Force Data Scientist jobs to Sydney and On-site
+        if "Data Scientist" in role:
+            location = "Sydney"
+            work_arrangement = "On-site"
 
         title_prefix = ""
         if i % 5 == 0:
@@ -75,6 +103,7 @@ def get_seed_jobs():
             "job_type": job_type,
             "description": description,
             "requirements": json.dumps(reqs),
+            "work_arrangement": work_arrangement,
             "job_embedding": embedding,
         })
 
@@ -82,55 +111,20 @@ def get_seed_jobs():
 
 def get_seed_posts():
     return [
-        {
-            "author_id": 1,
-            "content": "Just finished an amazing project with the team! Excited to share what we've built. #Engineering #Innovation",
-        },
-        {
-            "author_id": 1,
-            "content": "Looking for talented developers interested in AI/ML. We're hiring! Check our careers page.",
-        },
-        {
-            "author_id": 1,
-            "content": "Best practices for code review - communication and collaboration are key!",
-        },
-        {
-            "author_id": 1,
-            "content": "Excited to announce we're expanding our tech team! Open positions in backend, frontend, and data science.",
-        },
-        {
-            "author_id": 1,
-            "content": "Our new product launch was a success! Thank you to everyone who made it possible.",
-        },
+        {"author_id": 1, "content": "Just finished an amazing project with the team! Excited to share what we've built. #Engineering #Innovation"},
+        {"author_id": 1, "content": "Looking for talented developers interested in AI/ML. We're hiring! Check our careers page."},
+        {"author_id": 1, "content": "Best practices for code review - communication and collaboration are key!"},
+        {"author_id": 1, "content": "Excited to announce we're expanding our tech team! Open positions in backend, frontend, and data science."},
+        {"author_id": 1, "content": "Our new product launch was a success! Thank you to everyone who made it possible."},
     ]
 
 def get_seed_news():
     return [
-        {
-            "headline": "Tech Industry Sees Record Investment in 2024",
-            "company": "TechNews Daily",
-            "content": "The technology sector continues to attract significant venture capital funding as companies push the boundaries of innovation.",
-        },
-        {
-            "headline": "Remote Work Trends Continue to Shape the Workplace",
-            "company": "Business Insider",
-            "content": "Companies worldwide are adapting to hybrid and remote work models, transforming how we work.",
-        },
-        {
-            "headline": "AI and Machine Learning Transform Business Operations",
-            "company": "AI Weekly",
-            "content": "Artificial intelligence is revolutionizing how companies operate and serve their customers.",
-        },
-        {
-            "headline": "Cybersecurity Threats Increase: What You Need to Know",
-            "company": "Security Today",
-            "content": "Organizations must strengthen their security posture in response to evolving threats.",
-        },
-        {
-            "headline": "Top Programming Languages for 2024",
-            "company": "Code Masters",
-            "content": "Here are the most in-demand programming languages this year based on industry data.",
-        },
+        {"headline": "Tech Industry Sees Record Investment in 2024", "company": "TechNews Daily", "content": "The technology sector continues to attract significant venture capital funding as companies push the boundaries of innovation."},
+        {"headline": "Remote Work Trends Continue to Shape the Workplace", "company": "Business Insider", "content": "Companies worldwide are adapting to hybrid and remote work models, transforming how we work."},
+        {"headline": "AI and Machine Learning Transform Business Operations", "company": "AI Weekly", "content": "Artificial intelligence is revolutionizing how companies operate and serve their customers."},
+        {"headline": "Cybersecurity Threats Increase: What You Need to Know", "company": "Security Today", "content": "Organizations must strengthen their security posture in response to evolving threats."},
+        {"headline": "Top Programming Languages for 2024", "company": "Code Masters", "content": "Here are the most in-demand programming languages this year based on industry data."},
     ]
 
 def seed_database(db):

@@ -18,7 +18,7 @@
 import { EMPLOYMENT_TYPES } from '../../services/jobStore.js'
 
 const FILTER_OPTIONS = {
-  location: ['Sydney, NSW', 'Melbourne, VIC', 'Brisbane, QLD', 'Perth, WA', 'Adelaide, SA', 'Remote'],
+  location: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
   salaryRange: ['$50k - $70k', '$70k - $100k', '$100k - $150k', '$150k - $200k', '$200k+'],
   employmentType: EMPLOYMENT_TYPES,
   companyName: ['Google', 'Microsoft', 'Amazon', 'Atlassian', 'Canva', 'WiseTech', 'Xero', 'Afterpay'],
