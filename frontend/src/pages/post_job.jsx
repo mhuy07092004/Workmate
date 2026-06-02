@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 
-const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Contract', 'Temporary']
+const EMPLOYMENT_TYPES = ['Full-time', 'Contract', 'Remote', 'Hybrid']
 const WORK_ARRANGEMENTS = ['On-site', 'Remote', 'Hybrid']
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 

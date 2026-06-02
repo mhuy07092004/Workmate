@@ -17,7 +17,8 @@ const FILTER_OPTIONS = {
   experienceLevel: ['0-1 years', '1-2 years', '2-3 years', '3-5 years', '5+ years'],
   degreeType: ['High School', 'Bachelor', 'Master', 'PhD', 'Diploma', 'Certificate'],
   language: ['English', 'Vietnamese', 'Mandarin', 'Japanese', 'Korean', 'Spanish', 'French', 'German'],
-  workArrangement: ['Remote', 'On Site', 'Hybrid', 'Flexible'],
+  // workArrangement: ['Remote', 'On Site', 'Hybrid', 'Flexible'],
+  workArrangement: ['Remote', 'On-site', 'Hybrid'],
   industry: ['Technology', 'Finance', 'Healthcare', 'Education', 'Retail', 'Media', 'Consulting', 'Manufacturing'],
   major: ['Computer Science', 'Software Engineering', 'Data Science', 'Information Technology', 'Business Administration', 'Marketing', 'Design', 'Engineering', 'Mathematics', 'Physics'],
   roleLevel: ['Intern', 'Fresher', 'Junior', 'Senior', 'Lead', 'Manager', 'Director'],
@@ -31,10 +32,12 @@ function CandidateFilter({
   filters,
   onFilterChange,
   onClearFilters,
+  onSearch, 
   showFilters,
   setShowFilters,
   variant = 'page',
   suppressFields = [],
+  isSearching = false,
 }) {
   const isPopover = variant === 'popover'
   const hide = (field) => suppressFields.includes(field)
@@ -154,10 +157,22 @@ function CandidateFilter({
       <div className={actionsClass}>
         {onClearFilters && (
           <button
+            type="button"
             onClick={onClearFilters}
             className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
           >
             Clear All
+          </button>
+        )}
+
+        {onSearch && (
+          <button
+            type="button"
+            onClick={onSearch}
+            disabled={isSearching}
+            className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSearching ? 'Searching…' : 'Search'}
           </button>
         )}
       </div>

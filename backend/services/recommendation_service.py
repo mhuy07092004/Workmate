@@ -11,7 +11,29 @@ class RecommendationService:
         self.job_repo = JobRepository(db)
         self.profile_repo = ProfileRepository(db)
 
-    def recommend_candidates_for_job(self, job_id: int, limit: int = 12):
+    def _matches_education(self, job, candidate_education) -> bool:
+        """Check if candidate education level meets job requirements"""
+        education_hierarchy = {
+            "High School": 1,
+            "Associate Degree": 2,
+            "Bachelor's Degree": 3,
+            "Master's Degree": 4,
+            "PhD": 5
+        }
+        
+        # Extract required level from job requirements (basic parsing)
+        job_required_level = 1  # Default to minimum
+        
+        if job.requirements:
+            for level, rank in education_hierarchy.items():
+                if level.lower() in job.requirements.lower():
+                    job_required_level = rank
+                    break
+        
+        candidate_level = education_hierarchy.get(candidate_education, 1)
+        return candidate_level >= job_required_level
+
+    def recommend_candidates_for_job(self, job_id: int, limit: int = 10):
         job = self.job_repo.get_by_id_with_embedding(job_id)
         if not job:
             logger.error(f"Job {job_id} not found")
@@ -36,6 +58,12 @@ class RecommendationService:
                 logger.debug(f"Skipping candidate {c.user_id} - no resume embedding")
                 continue
             score = calculate_cosine_similarity(job.job_embedding, c.resume_embedding)
+            
+            bonus = 0
+            if c.education_level and self._matches_education(job, c.education_level):
+                bonus += 0.1  # Small boost for education match
+            score += bonus
+
             scored.append({
                 "id": c.id,
                 "userId": c.user_id,

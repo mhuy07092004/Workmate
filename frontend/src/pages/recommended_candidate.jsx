@@ -271,7 +271,9 @@ function RecommendedCandidate() {
                       <CandidateCard
                         key={candidate.userId || candidate.id}
                         candidate={candidate}
-                      />
+                        isEmployerView={true}
+                        onStatusChange={(candidateId, newStatus) => console.log(`Updated ${candidateId} to ${newStatus}`)}
+                    />
                     ))}
                   </div>
 

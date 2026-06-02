@@ -14,9 +14,7 @@ def get_db():
 
 router = APIRouter(tags=["profile"])
 
-# ✅ FIX: use env var, fallback to hardcoded for local dev
-BASE_URL = os.getenv("BASE_URL", "https://workmate-backend-553349336249.australia-southeast1.run.app")
-
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 UPLOAD_DIR = "uploads"
 RESUME_DIR = os.path.join(UPLOAD_DIR, "resumes")
 PROFILE_DIR = os.path.join(UPLOAD_DIR, "profiles")
@@ -43,6 +41,7 @@ async def upload_files(
     current_user=Depends(get_current_user),
 ):
     file_urls = {}
+    resume_filepath = None  # ✅ Track local filepath for embedding generation
 
     try:
         if resume:
@@ -51,11 +50,12 @@ async def upload_files(
 
             filename = f"{user_id}_{datetime.now().timestamp()}.pdf"
             filepath = os.path.join(RESUME_DIR, filename)
+            resume_filepath = filepath  # ✅ Store for embedding call below
 
             with open(filepath, "wb") as f:
                 f.write(await resume.read())
 
-            # ✅ FIX: return full public HTTPS URL, not local path
+            # ✅ Create public URL for response and database storage
             file_urls["resume_url"] = f"{BASE_URL}/uploads/resumes/{filename}"
 
         if profile_picture:
@@ -68,12 +68,16 @@ async def upload_files(
             with open(filepath, "wb") as f:
                 f.write(await profile_picture.read())
 
-            # ✅ FIX: return full public HTTPS URL, not local path
             file_urls["profile_picture_url"] = f"{BASE_URL}/uploads/profiles/{filename}"
 
-        if "resume_url" in file_urls:
+        # ✅ FIX: Pass LOCAL filepath for PDF extraction + PUBLIC URL for storage
+        if "resume_url" in file_urls and resume_filepath:
             service = ProfileService(db)
-            service.generate_resume_embedding_for_user(user_id, file_urls["resume_url"])
+            service.generate_resume_embedding_for_user(
+                user_id,
+                resume_filepath,  # Local filesystem path for os.path.exists() and PDF reading
+                file_urls["resume_url"]  # Public URL to store in database
+            )
 
         return file_urls
 

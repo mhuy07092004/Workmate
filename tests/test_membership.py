@@ -34,21 +34,22 @@ class TestM02_PremiumCandidateUnlimited:
         svc = CandidateService(db)
         svc.candidate_repo = MagicMock()
         svc.job_repo = MagicMock()
- 
+        svc.profile_repo = MagicMock()  # ADD THIS
+        svc.profile_repo.get_by_user_id.return_value = None  # ADD THIS
+        
         candidate = make_profile(resume_embedding=[0.1] * 384)
         candidate.is_premium = True
         svc.candidate_repo.get_candidate_with_resume_embedding.return_value = candidate
- 
+        
         # 20 jobs available
         jobs = [make_job(i, job_embedding=[0.1] * 384) for i in range(1, 21)]
         svc.job_repo.get_all_with_embeddings.return_value = jobs
- 
+        
         # Premium → pass limit = len(jobs)
         limit = len(jobs) if candidate.is_premium else 10
         result, status = svc.get_recommended_jobs(user_id=1, limit=limit)
         assert status == 200
-        assert len(result["jobs"]) == 20
- 
+        assert len(result["jobs"]) == 20 
  
 class TestM03_FreeEmployerLimit:
     """M03 – Free employer sees max 10 recommended candidates"""

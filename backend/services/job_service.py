@@ -47,6 +47,39 @@ class JobService:
     def search_jobs(self, filters: dict):
         """
         Search jobs by keyword (in description + requirements) and apply filters.
+        """
+        jobs = self.job_repo.search(filters)
+        
+        print(f"DEBUG: Initial jobs from repo: {len(jobs)}")  # NEW
+        print(f"DEBUG: Filters: {filters}")  # NEW
+
+        # Handle fuzzy keyword search in description + requirements
+        if filters.get("keyword"):
+            search_keyword = filters["keyword"].lower()
+            print(f"DEBUG: Searching for keyword: '{search_keyword}'")  # NEW
+            
+            # Filter by fuzzy matching on description + requirements
+            filtered_jobs = []
+            for job in jobs:
+                job_content = f"{job.title or ''} {job.description or ''} {job.requirements or ''}".lower()
+                
+                # Use fuzzy matching with 30% threshold for typo tolerance
+                match_score = fuzz.partial_ratio(search_keyword, job_content)
+                
+                print(f"DEBUG: Job '{job.title}' score: {match_score}")  # NEW
+                
+                if match_score >= 50:
+                    filtered_jobs.append((job, match_score))
+            
+            print(f"DEBUG: Matched jobs: {len(filtered_jobs)}")  # NEW
+            
+            # Sort by match score (highest first)
+            filtered_jobs.sort(key=lambda x: x[1], reverse=True)
+            jobs = [job for job, score in filtered_jobs]
+
+        return {"jobs": [self._serialize_job(job) for job in jobs]}, 200
+        """
+        Search jobs by keyword (in description + requirements) and apply filters.
         
         Filters:
           - keyword: Searches description + requirements (with fuzzy matching for typos)
@@ -73,7 +106,7 @@ class JobService:
                 # Use fuzzy matching with 70% threshold for typo tolerance
                 match_score = fuzz.token_set_ratio(search_keyword, job_content)
                 
-                if match_score >= 50:
+                if match_score >= 30:
                     filtered_jobs.append((job, match_score))
             
             # Sort by match score (highest first)

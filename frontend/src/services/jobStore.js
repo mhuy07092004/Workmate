@@ -39,7 +39,7 @@
 // "Full-time", "Contract", "Remote", "Hybrid"
 export const EMPLOYMENT_TYPES = ["Full-time", "Contract", "Remote", "Hybrid"]
 
-export const WORK_ARRANGEMENTS = ['Remote', 'On Site', 'Hybrid']
+export const WORK_ARRANGEMENTS = ['Remote', 'On-site', 'Hybrid']
 
 export const EDUCATION_LEVELS = [
   'High School',
@@ -208,7 +208,7 @@ export function normalizeApiJob(job) {
     title: job.title,
     company: job.company,
     employmentType: job.job_type,
-    workArrangement: job.workArrangement || 'On Site',
+    workArrangement: job.work_arrangement || 'On-site',
     type: job.job_type,
     location: job.location,
     postedTime: `Posted ${calculateDaysAgo(job.created_at)}`,
