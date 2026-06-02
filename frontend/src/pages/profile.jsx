@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import ProfilePictureCard from '../components/ProfilePictureCard/ProfilePictureCard.jsx'
@@ -18,16 +17,8 @@ function newExperienceEntry() {
   }
 }
 
-function getCurrentUserEmail() {
-  return localStorage.getItem('workmate_current_user_email')
-}
-
 function getCurrentUserID() {
   return localStorage.getItem('workmate_user_id')
-}
-
-function getCurrentUserRole() {
-  return localStorage.getItem('workmate_user_role')
 }
 
 function getAuthToken() {
@@ -78,12 +69,10 @@ function CandidateProfile() {
   const [resumeUrl, setResumeUrl] = useState(null)
 
   const fileInputRef = useRef(null)
-  const navigate = useNavigate()
   const userId = getCurrentUserID()
 
   useEffect(() => {
     if (!formData.profile_picture_file) {
-      setProfilePicturePreviewUrl(null)
       return
     }
     const reader = new FileReader()
@@ -218,7 +207,7 @@ function CandidateProfile() {
       newErrors.preferred_location = 'Preferred location is required'
     }
 
-    const expErrors = experiences.map((exp, _idx) => {
+    const expErrors = experiences.map((exp) => {
       const expErr = {}
       if (!exp.position?.trim()) expErr.position = 'Position is required'
       if (!exp.company_name?.trim()) expErr.company_name = 'Company name is required'
@@ -320,7 +309,7 @@ function CandidateProfile() {
     }
   }
 
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       if (!userId) return
 
@@ -366,11 +355,11 @@ function CandidateProfile() {
     } catch (err) {
       console.error('Error loading profile:', err)
     }
-  }
+  }, [userId])
 
   useEffect(() => {
     loadUserData()
-  }, [userId])
+  }, [loadUserData])
 
   const getWordCount = () =>
     formData.about_you.trim().split(/\s+/).filter(w => w.length > 0).length
