@@ -62,8 +62,6 @@ jobs:
         working-directory: frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm install -g vercel
-          vercel deploy --prod
+          vercel deploy --prod --org=longtran1406s-projects --project=prj_kOBWXsqi8NqcLRDztjACn6ccEvND
