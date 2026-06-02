@@ -83,7 +83,7 @@ function Dashboard() {
   const isCandidate = userRole === 'candidate'
 
   // Profile/Job Check States
-  const [profileCheckLoading, setProfileCheckLoading] = useState(true)
+  const [profileCheckLoading, setProfileCheckLoading] = useState(isCandidate)
   const [profileCheckError, setProfileCheckError] = useState('')
   const [hasProfile, setHasProfile] = useState(false)
   const [employerHasJobs, setEmployerHasJobs] = useState(false)
@@ -133,7 +133,6 @@ function Dashboard() {
   // ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isCandidate) {
-      setProfileCheckLoading(false)
       return
     }
 
