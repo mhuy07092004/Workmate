@@ -6,7 +6,7 @@ on:
     paths:
       - 'backend/**'
       - 'tests/**'
-      - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/ci_backend.yml'
   pull_request:
     branches: [main, develop]
     paths:
