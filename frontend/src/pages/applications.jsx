@@ -7,7 +7,7 @@
  * - Employer posted jobs integrated with backend
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
@@ -91,25 +91,10 @@ function Applications() {
     return labels[status] || status
   }
 
-  // Fetch candidate applications
-  useEffect(() => {
-    if (!isEmployer && userId) {
-      fetchSavedJobs()
-      fetchAppliedJobs()
-    }
-  }, [userId, isEmployer])
-
-  // Fetch employer posted jobs
-  useEffect(() => {
-    if (isEmployer && userId) {
-      fetchPostedJobs()
-    }
-  }, [userId, isEmployer])
-
   /**
    * Helper function to calculate days ago from date string
    */
-  const calculateDaysAgo = (dateString) => {
+  const calculateDaysAgo = useCallback((dateString) => {
     if (!dateString) return 'recently'
 
     const date = new Date(dateString)
@@ -126,12 +111,12 @@ function Applications() {
     if (daysAgo < 365) return `${Math.floor(daysAgo / 30)} months ago`
 
     return `${Math.floor(daysAgo / 365)} years ago`
-  }
+  }, [])
 
   /**
    * Fetch saved jobs for candidates
    */
-  async function fetchSavedJobs() {
+  const fetchSavedJobs = useCallback(async () => {
     try {
       setIsLoadingSaved(true)
       setSavedError('')
@@ -189,12 +174,12 @@ function Applications() {
     } finally {
       setIsLoadingSaved(false)
     }
-  }
+  }, [calculateDaysAgo, userId])
 
   /**
    * Fetch candidate applied jobs with status
    */
-  async function fetchAppliedJobs() {
+  const fetchAppliedJobs = useCallback(async () => {
     try {
       setIsLoadingApplied(true)
       setAppliedError('')
@@ -278,12 +263,12 @@ function Applications() {
     } finally {
       setIsLoadingApplied(false)
     }
-  }
+  }, [calculateDaysAgo, userId])
 
   /**
    * Fetch employer posted jobs
    */
-  async function fetchPostedJobs() {
+  const fetchPostedJobs = useCallback(async () => {
     try {
       setIsLoadingPosted(true)
       setPostedError('')
@@ -340,7 +325,26 @@ function Applications() {
     } finally {
       setIsLoadingPosted(false)
     }
-  }
+  }, [calculateDaysAgo, userId])
+
+  // Fetch candidate applications
+  useEffect(() => {
+    if (!isEmployer && userId) {
+      queueMicrotask(() => {
+        fetchSavedJobs()
+        fetchAppliedJobs()
+      })
+    }
+  }, [userId, isEmployer, fetchSavedJobs, fetchAppliedJobs])
+
+  // Fetch employer posted jobs
+  useEffect(() => {
+    if (isEmployer && userId) {
+      queueMicrotask(() => {
+        fetchPostedJobs()
+      })
+    }
+  }, [userId, isEmployer, fetchPostedJobs])
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
