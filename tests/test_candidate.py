@@ -288,7 +288,8 @@ class TestNR41_ResumeEmbeddingPipeline:
         svc = ProfileService(db)
         svc.profile_repo = MagicMock()
         svc.profile_repo.get_by_user_id.return_value = make_profile()
-        result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/resume.pdf")
+        # result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/resume.pdf")
+        result = svc.generate_resume_embedding_for_user(user_id=1, resume_filepath="/uploads/resume.pdf", resume_url="/uploads/resume.pdf")
         assert result is True
         svc.profile_repo.update.assert_called_once()
         update_data = svc.profile_repo.update.call_args[0][1]
@@ -303,7 +304,8 @@ class TestNR41_ResumeEmbeddingPipeline:
         svc = ProfileService(db)
         svc.profile_repo = MagicMock()
         svc.profile_repo.get_by_user_id.return_value = None
-        result = svc.generate_resume_embedding_for_user(user_id=999, resume_path="/uploads/any.pdf")
+        # result = svc.generate_resume_embedding_for_user(user_id=999, resume_path="/uploads/any.pdf")
+        result = svc.generate_resume_embedding_for_user(user_id=999, resume_filepath="/uploads/any.pdf", resume_url="/uploads/any.pdf")
         assert result is False
         svc.profile_repo.update.assert_not_called()
 
@@ -315,7 +317,8 @@ class TestNR41_ResumeEmbeddingPipeline:
         svc = ProfileService(db)
         svc.profile_repo = MagicMock()
         svc.profile_repo.get_by_user_id.return_value = make_profile()
-        result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/missing.pdf")
+        # result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/missing.pdf")
+        result = svc.generate_resume_embedding_for_user(user_id=1, resume_filepath="/uploads/missing.pdf", resume_url="/uploads/missing.pdf")
         assert result is False
         svc.profile_repo.update.assert_not_called()
 
@@ -333,6 +336,7 @@ class TestNR41_ResumeEmbeddingPipeline:
         svc = ProfileService(db)
         svc.profile_repo = MagicMock()
         svc.profile_repo.get_by_user_id.return_value = make_profile()
-        result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/resume.pdf")
+        # result = svc.generate_resume_embedding_for_user(user_id=1, resume_path="/uploads/resume.pdf")
+        result = svc.generate_resume_embedding_for_user(user_id=1, resume_filepath="/uploads/resume.pdf", resume_url="/uploads/resume.pdf")
         assert result is False
         svc.profile_repo.update.assert_not_called()
