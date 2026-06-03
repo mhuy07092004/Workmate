@@ -2,15 +2,16 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [main, ttvt098-patch-1, cicd]
+    branches: [main, ttvt098-patch-1, cicd, cicd_final]
     paths:
       - 'frontend/**'
       - '.github/workflows/ci-frontend-v3.yml'
 
   pull_request:
-    branches: [main, ttvt098-patch-1, cicd]
+    branches: [main, ttvt098-patch-1, cicd, cicd_final]
     paths:
       - 'frontend/**'
+      - '.github/workflows/ci-frontend-v3.yml'
 
 jobs:
   lint-and-build:

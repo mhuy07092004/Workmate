@@ -2,16 +2,17 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [main, ttvt098-patch-1, cicd]
+    branches: [main, ttvt098-patch-1, cicd, cicd_final]
     paths:
       - 'backend/**'
       - 'tests/**'
       - '.github/workflows/ci_backend.yml'
   pull_request:
-    branches: [main, ttvt098-patch-1, cicd]
+    branches: [main, ttvt098-patch-1, cicd, cicd_final]
     paths:
       - 'backend/**'
       - 'tests/**'
+      - '.github/workflows/ci_backend.yml'
 
 jobs:
   test:
