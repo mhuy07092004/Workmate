@@ -43,10 +43,11 @@ jobs:
   deploy-to-vercel:
     needs: lint-and-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' &&
+    if: (github.event_name == 'push' &&
         (github.ref == 'refs/heads/main' ||
          github.ref == 'refs/heads/cicd' ||
-         github.ref == 'refs/heads/cicd_final')
+         github.ref == 'refs/heads/cicd_final')) ||
+        (github.event_name == 'pull_request' && github.base_ref == 'main')
 
     steps:
       - uses: actions/checkout@v4
