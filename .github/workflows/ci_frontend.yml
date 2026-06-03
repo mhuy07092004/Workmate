@@ -11,7 +11,7 @@ on:
     branches: [main, ttvt098-patch-1, cicd]
     paths:
       - 'frontend/**'
-      - '.github/workflows/ci-frontend-v3.yml'
+      
 
 jobs:
   lint-and-build:
