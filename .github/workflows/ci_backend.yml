@@ -12,6 +12,7 @@ on:
     paths:
       - 'backend/**'
       - 'tests/**'
+      - '.github/workflows/ci_backend.yml'
 
 jobs:
   test:
@@ -48,6 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check required secrets
+        run: |
+          test -n "${{ secrets.DOCKER_HUB_USERNAME }}"
+          test -n "${{ secrets.DOCKER_HUB_TOKEN }}"
+          test -n "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
