@@ -5,7 +5,7 @@ on:
     branches: [main, ttvt098-patch-1, cicd]
     paths:
       - 'frontend/**'
-      - '.github/workflows/ci-frontend-v3.yml'
+      - '.github/workflows/ci_frontend.yml'
 
   pull_request:
     branches: [main, ttvt098-patch-1, cicd]
