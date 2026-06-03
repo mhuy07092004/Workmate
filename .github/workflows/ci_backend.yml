@@ -44,7 +44,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cicd' || github.ref == 'refs/heads/cicd')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cicd' || github.ref == 'refs/heads/cicd_final')
     
     steps:
       - uses: actions/checkout@v4
