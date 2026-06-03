@@ -12,7 +12,7 @@ on:
     paths:
       - 'backend/**'
       - 'tests/**'
-      - '.github/workflows/ci_backend.yml'
+     
 
 jobs:
   test:
