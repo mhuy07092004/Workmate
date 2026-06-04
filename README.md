@@ -11,8 +11,8 @@ A job-matching platform connecting candidates with employers through intelligent
 
 ```
 Workmate/
-├── fe/          # Frontend — React + Vite application
-└── be/          # Backend — API server (see be/README.md)
+├── frontend/          # Frontend — React + Vite application
+└── backend/          # Backend — API server (see be/README.md)
 ```
 
 ---
@@ -27,36 +27,12 @@ Workmate/
 ## Run Frontend Locally
 
 ```bash
-cd fe
+cd frontend
 npm install
 npm run dev
 ```
 
 The app runs at `http://localhost:5173`.
-
----
-
-## Run with Docker
-
-Docker guarantees an identical environment on Windows, Mac, and Linux — no local Node/npm required.
-
-**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2)
-
-All commands are run from the **repo root** (`Workmate/`). The single `docker-compose.yml` at the root is designed to grow with the project — `be` and `model` services can be added as new sections without touching the frontend config.
-
-```bash
-# Development (Vite HMR) — run from Workmate/
-docker compose --profile dev up --build
-# → http://localhost:5173
-
-# Production build served by nginx — run from Workmate/
-docker compose --profile prod up --build
-# → http://localhost:8080
-```
-
-- Pass `--build` on the first run and whenever `fe/package.json` changes.
-- `node_modules` lives only inside the container; the host machine stays clean.
-- Linter inside container: `docker compose --profile dev run --rm frontend-dev npm run lint`
 
 ---
 
@@ -68,15 +44,6 @@ docker compose --profile prod up --build
 | `npm run build` | Create production build in `dist/` |
 | `npm run preview` | Preview production build locally |
 | `npm run lint` | Run ESLint on all source files |
-
----
-
-## Demo Credentials (Mock Auth)
-
-| Role | Email | Password |
-|------|-------|----------|
-| Candidate | `user@user.com` | `1` |
-| Employer | `employer@employer.com` | `1` |
 
 ---
 
