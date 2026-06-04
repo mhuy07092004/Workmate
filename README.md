@@ -36,7 +36,7 @@ The app runs at `http://localhost:5173`.
 
 ---
 
-## Available Scripts (run from `fe/`)
+## Available Scripts (run from `frontend/`)
 
 | Command | Description |
 |---------|-------------|
