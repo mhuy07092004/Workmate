@@ -158,7 +158,7 @@ The frontend currently uses **mock authentication** with localStorage and static
 - `workmate_token` - JWT token for authenticated requests
 
 **Files to Modify When Adding Backend:**
-1. `fe/src/services/userService.js` - Replace mock functions with API calls
-2. `fe/src/pages/login.jsx` - Replace hardcoded credential check with API login
-3. `fe/src/pages/profile.jsx` - Connect save profile to API endpoint
-4. `fe/src/components/Navbar/Navbar.jsx` - Update auth state check
+1. `frontend/src/services/userService.js` - Replace mock functions with API calls
+2. `frontend/src/pages/login.jsx` - Replace hardcoded credential check with API login
+3. `frontend/src/pages/profile.jsx` - Connect save profile to API endpoint
+4. `frontend/src/components/Navbar/Navbar.jsx` - Update auth state check
