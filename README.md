@@ -12,7 +12,7 @@ A job-matching platform connecting candidates with employers through intelligent
 ```
 Workmate/
 ├── frontend/          # Frontend — React + Vite application
-└── backend/          # Backend — API server (see be/README.md)
+└── backend/           # Backend — FastAPI + SQLite API (see backend/README.md)
 ```
 
 ---
@@ -21,18 +21,29 @@ Workmate/
 
 - [Node.js](https://nodejs.org) 18+
 - npm 9+ (bundled with Node.js)
+- Python 3.10+ (for the backend API — see `backend/README.md`)
 
 ---
 
 ## Run Frontend Locally
 
+The frontend expects the backend API at `http://127.0.0.1:8000` (set in `frontend/.env` as `VITE_API_BASE_URL`).
+
 ```bash
+# Terminal 1 — backend (required for sign-in and most pages)
+cd backend
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Terminal 2 — frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173`.
+The app runs at `http://localhost:5173`. API docs: `http://127.0.0.1:8000/docs`.
 
 ---
 
@@ -50,115 +61,153 @@ The app runs at `http://localhost:5173`.
 ## Website Flow & Architecture
 
 ### Authentication Flow
-1. **Landing Page** (`/login`) - Two-column layout: left branding panel with animated floating bubbles; right panel with sign-in / sign-up tab switcher
-2. **Sign In** - Email + password only; role is inferred from the matched user record (no role selector on sign-in). Includes show/hide password toggle and a "Remember me" checkbox (UI only — not yet functional)
-3. **Sign Up** - Role selector (Candidate / Employer) appears; the name field label adapts ("Full Name" vs "Company Name")
-4. **Session Management** - Auth state stored in `localStorage` via `userService.js` (`workmate_signed_in`, `workmate_current_user_email`, `workmate_user_role`); redirects to `/dashboard` on success (to be replaced with JWT when backend is ready)
+1. **Auth page** (`/login`) — Two-column layout: branding panel with animated bubbles on the left; sign-in / sign-up tab switcher on the right
+2. **Sign in** — Email and password only (no role picker). Calls `POST /auth/signin` against the backend (`VITE_API_BASE_URL`); role comes from the returned `user` object. Includes show/hide password and a “Remember me” checkbox (UI only)
+3. **Sign up** — Candidate / Employer role switcher; the name field label switches between “Full Name” and “Company Name”. Calls `POST /auth/signup`, then auto sign-in; shows a success message and redirects to `/dashboard` after ~1.5s
+4. **Session** — JWT in `workmate_token` (primary auth flag for the navbar and authenticated API calls); `workmate_current_user_email`, `workmate_user_role`, and `workmate_user_id` in `localStorage` (written in `login.jsx`, read/cleared in `userService.js`). Successful sign-in or sign-up navigates to `/dashboard`. Sign-out clears these keys via `userService.clearCurrentUser()` and returns to `/login`
 
 ### Page Structure
 
 | Route | Page | Description | Role Access |
 |-------|------|-------------|-------------|
-| `/` | **Dashboard** | Main page with recommended jobs, hiring news, and social posts | All |
-| `/login` | **Login/Signup** | Landing page with sign-in and sign-up forms | Guest |
-| `/profile` | **Profile** | Manage personal info, education, experience, and resume | All |
-| `/recommended-jobs` | **Recommended Jobs** | Job search with 15+ advanced filters | Candidates |
-| `/recommended-candidates` | **Recommended Candidates** | Candidate discovery (placeholder) | Employers |
-| `/applications` | **Applications** | Saved jobs + applied jobs (candidates) / Posted jobs + saved candidates (employers) | All |
-| `/post` | **Posts Feed** | Social feed for professional networking | All |
+| `/` | **Landing** | Public marketing page (hero video, about, team) | Guest |
+| `/dashboard` | **Dashboard** | Role-aware home: job search + news + posts (candidates) or candidate search + news + posts (employers) | All |
+| `/login` | **Login / Sign up** | Auth forms (JWT via backend) | Guest |
+| `/profile` | **Profile** | Candidate or employer profile (API-backed; resume upload for candidates) | All |
+| `/recommended-jobs` | **Recommended Jobs** | AI-ranked jobs from resume similarity (`GET /candidates/recommended-jobs/:id`) | Candidates |
+| `/recommended-candidates` | **Recommended Candidates** | AI-ranked candidates per posted job (`GET /recommendations/candidates`) | Employers |
+| `/applications` | **Applications** | Saved jobs + applied jobs (candidates) / posted jobs + applicants (employers); saved candidates list still mock for employers | All |
+| `/post` | **Posts Feed** | Social posts (`GET` / `POST /posts/`) | All |
+| `/post-job` | **Post Job** | Create a job listing (`POST /jobs/`) | Employers |
+| `/job/:id` | **Job Description** | Job detail, save, apply entry | All |
+| `/job/:id/application` | **Job Application** | Submit application (`POST /applications/`) | Candidates |
+| `/news` | **News** | HR news listing (mock data; backend `GET /news/` ready) | All |
+| `/news/:id` | **News Article** | Single article (mock; backend ready) | All |
+| `/mynetwork` | **My Network** | Professional connections page | All |
+| `/subscription` | **Subscription** | Membership tiers and billing flow | All |
+| `/payment` | **Payment** | Payment step for subscription | All |
 | `/help` | **Help Center** | FAQ accordion + contact information | All |
 | `/settings` | **Settings** | User preferences (placeholder) | All |
-| `/hr-news` | **HR News** | Industry news (placeholder) | All |
-| `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | **Information Pages** | Static content pages (placeholders) | All |
+| `/hr-news` | **HR News** | Placeholder (“coming soon”) | All |
+| `/portal`, `/privacy`, `/terms`, `/lawyers-corners` | **Information Pages** | Static placeholders | All |
+| `*` (unknown) | — | Redirects to `/` | — |
 
 ### Key Features
 
 #### For Candidates
-- **Job Discovery**: Browse AI-recommended jobs, jobs based on viewing history, and related roles
-- **Advanced Filtering**: Filter by location, salary, job category, industry, employment type, work arrangement, certifications, languages, degree requirements, experience level, and role level
-- **Application Tracking**: View saved jobs and track applied positions
-- **Profile Management**: Complete profile with education, work experience, and resume upload
+- **Dashboard**: Keyword + filter search via `POST /jobs/search` (location, salary range, employment type, company); news and posts from the API
+- **AI recommendations**: `/recommended-jobs` ranks jobs by resume–job embedding similarity (tier limits: Free 10, Premium unlimited)
+- **Applications**: Saved jobs and applied jobs with status badges via `/saved` and `/applications` APIs
+- **Profile**: Education, experience, skills, resume and profile picture upload (`/profiles/*`)
 
 #### For Employers
-- **Candidate Discovery**: Browse recommended candidates (planned)
-- **Job Posting**: Post job openings (via `/post` page)
-- **Applicant Management**: View applicants and save promising candidates
-- **Company Profile**: Manage company information and branding
+- **Dashboard**: Candidate search filters (keyword, location, major, degree, experience) with client-side filtering on loaded candidates; news and posts from the API
+- **AI recommendations**: `/recommended-candidates` picks top matches per selected job
+- **Job posting**: `/post-job` creates listings (`POST /jobs/`)
+- **Applicant management**: `/applications` shows posted jobs and applicants; saved candidates UI still uses mock data
+- **Company profile**: Employer profile via `/employer_profiles/*`
 
 ### Frontend Component Architecture
 
 ```
-fe/src/
-├── pages/              # Page components (route-level)
-│   ├── login.jsx       # Authentication landing page
-│   ├── dashboard.jsx   # Main dashboard with recommendations
-│   ├── profile.jsx     # User profile management
-│   ├── recommended_job.jsx    # Job search with filters
-│   ├── applications.jsx  # Saved jobs/applicants management
-│   ├── post.jsx        # Social posts feed
-│   ├── help.jsx        # Help center with FAQ
-│   ├── settings.jsx    # Settings placeholder
-│   └── placeholder.jsx # Generic placeholder for unimplemented pages
-├── components/         # Reusable UI components
-│   ├── Navbar/         # Top navigation with search, notifications, user dropdown
-│   ├── Footer/         # Site footer with links
-│   ├── JobCard/        # Job listing card
-│   ├── CandidateCard/  # Candidate card for employers
-│   ├── NewsCard/       # Hiring news card
-│   ├── PostCard/       # Social post card
-│   ├── Contact/        # Sticky sidebar contact list
-│   └── Button/         # Reusable button components
-├── services/           # API service layer
-│   └── userService.js  # User data management (mock → real API)
-├── data/               # Mock data
-│   └── user.json       # Demo user accounts
-└── App.jsx             # Route definitions with lazy loading
+frontend/src/
+├── pages/                    # Route-level pages (lazy-loaded in App.jsx)
+│   ├── landing.jsx           # Public landing (/)
+│   ├── login.jsx             # Sign-in / sign-up
+│   ├── dashboard.jsx         # Main app home after auth
+│   ├── profile.jsx           # Candidate & employer profiles
+│   ├── recommended_job.jsx   # AI job recommendations
+│   ├── recommended_candidate.jsx
+│   ├── applications.jsx      # Saved / applied / posted jobs
+│   ├── post.jsx              # Social posts feed
+│   ├── post_job.jsx          # Employer job creation
+│   ├── job_description.jsx   # Job detail page
+│   ├── news.jsx / news_information.jsx
+│   ├── subscription.jsx / payment.jsx
+│   ├── mynetwork.jsx
+│   ├── help.jsx
+│   ├── settings.jsx / placeholder.jsx
+│   └── ...
+├── components/
+│   ├── Navbar/               # Auth, search popover (filters UI; search not wired to API)
+│   ├── Footer/
+│   ├── JobCard/ / CandidateCard/ / NewsCard/ / PostCard/
+│   ├── FilterSection/        # JobFilter, CandidateFilter
+│   ├── JobDesription/        # Job detail + application form
+│   ├── Contact/ / Button/ / Posts/ / subscription/
+│   └── ProfilePictureCard/
+├── services/
+│   ├── userService.js        # localStorage user helpers + legacy user.json lookup
+│   ├── jobStore.js           # Job normalization + legacy localStorage helpers
+│   ├── applicationStore.js   # Apply + applied jobs API
+│   ├── applicationStatusService.js
+│   └── subscriptionService.js
+├── data/
+│   └── user.json             # Legacy demo data (not used for login)
+├── utils/
+│   └── jobFilters.js
+└── App.jsx                   # Route definitions with React.lazy code-splitting
 ```
 
 ### Data Flow
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Login     │────▶│ localStorage │────▶│   Navbar    │
-│   Page      │     │   (email,    │     │  (auth      │
-│             │     │   role)      │     │   state)    │
-└─────────────┘     └──────────────┘     └─────────────┘
-                                                │
-                                                ▼
-                                       ┌─────────────┐
-                                       │ userService │
-                                       │   (mock)    │
-                                       │             │
-                                       │ • getCurrent│
-                                       │   User()    │
-                                       │ • findUser  │
-                                       │   ByEmail() │
-                                       └─────────────┘
+┌─────────────┐     POST /auth/signin      ┌──────────────┐
+│   Login     │ ─────────────────────────▶ │   Backend    │
+│   Page      │ ◀──── access_token, user ──│  (FastAPI)   │
+└─────────────┘                            └──────────────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│ localStorage: workmate_token, workmate_user_id,          │
+│               workmate_current_user_email, workmate_user_role │
+└──────────────────────────────────────────────────────────┘
+       │
+       ├──────────────────▶ Navbar (signed-in UI, logout)
+       │
+       └──────────────────▶ Pages (Bearer token on API calls)
+                                    │
+                                    ▼
+                           userService.js — read/clear session;
+                           profile lookups via user.json (legacy)
 ```
 
 ---
 
 ## Backend Integration
 
-The frontend currently uses **mock authentication** with localStorage and static JSON data. See `be/README.md` for:
-- Required API endpoints specification
-- Complete data models
-- Authentication flow (JWT-based)
-- Migration guide from mock to real backend
-- Storage key recommendations
+The frontend is **hybrid**: core flows (auth, jobs, applications, profiles, posts, recommendations, subscriptions) call the FastAPI backend. Some UI still uses mock or local-only data (news pages, navbar search/notifications, employer saved candidates on `/applications`). See `backend/README.md` for:
+
+- API endpoints and data models
+- JWT auth (`/auth/signin`, `/auth/signup` — no `/api` prefix)
+- Integration map per frontend file
+- Remaining wiring checklist
 
 ### Quick Backend Notes
 
-**Current Mock Storage Keys:**
-- `workmate_signed_in` - Boolean auth flag
-- `workmate_current_user_email` - Current user identifier
-- `workmate_user_role` - User role (candidate/employer)
+**localStorage keys (in use):**
 
-**Target Backend Storage:**
-- `workmate_token` - JWT token for authenticated requests
+| Key | Purpose |
+|-----|---------|
+| `workmate_token` | JWT for `Authorization: Bearer` |
+| `workmate_current_user_email` | Signed-in email |
+| `workmate_user_role` | `candidate` or `employer` |
+| `workmate_user_id` | User ID for path params (`/profiles/{id}`, etc.) |
+| `workmate_saved_resume` | Client-only resume metadata |
+| `workmate_posted_jobs` | Legacy — unused |
 
-**Files to Modify When Adding Backend:**
-1. `fe/src/services/userService.js` - Replace mock functions with API calls
-2. `fe/src/pages/login.jsx` - Replace hardcoded credential check with API login
-3. `fe/src/pages/profile.jsx` - Connect save profile to API endpoint
-4. `fe/src/components/Navbar/Navbar.jsx` - Update auth state check
+**Not used:** `workmate_signed_in` (removed in favour of JWT).
+
+**Primary integration points:**
+
+| File | Status |
+|------|--------|
+| `frontend/src/pages/login.jsx` | Wired — `POST /auth/signin`, `/auth/signup` |
+| `frontend/src/pages/dashboard.jsx` | Wired — jobs/candidates search, posts, news |
+| `frontend/src/pages/profile.jsx` | Wired — profiles + uploads |
+| `frontend/src/pages/post_job.jsx` | Wired — `POST /jobs/` |
+| `frontend/src/pages/applications.jsx` | Partial — APIs for jobs/applications; employer saved candidates mock |
+| `frontend/src/pages/news.jsx`, `news_information.jsx` | Mock — backend `GET /news/` ready |
+| `frontend/src/components/Navbar/Navbar.jsx` | Auth wired; search + notifications mock |
+
+**Still to wire (high level):** news pages → `GET /news/`; navbar search → `POST /jobs/search`; employer saved candidates → `/saved` API. Full checklist in `backend/README.md`.
