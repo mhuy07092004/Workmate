@@ -44,6 +44,7 @@ function getAuthToken() {
   return localStorage.getItem('workmate_token')
 }
 
+
 /**
  * Generic API fetch helper
  */

@@ -12,7 +12,8 @@ A job-matching platform connecting candidates with employers through intelligent
 ```
 Workmate/
 ├── frontend/          # Frontend — React + Vite application
-└── backend/           # Backend — FastAPI + SQLite API (see backend/README.md)
+├── backend/           # Backend — FastAPI + SQLite API (see backend/README.md)
+└── tests/             # Automated tests (frontend and backend)
 ```
 
 ---
