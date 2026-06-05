@@ -26,7 +26,7 @@ Workmate/
 
 ---
 
-## Run Frontend Locally
+## Run WebApp Locally
 
 The frontend expects the backend API at `http://127.0.0.1:8000` (set in `frontend/.env` as `VITE_API_BASE_URL`).
 
@@ -42,6 +42,11 @@ uvicorn main:app --reload
 cd frontend
 npm install
 npm run dev
+```
+
+## Run Test Locally (Ensure already download packages listed in requirements.txt)
+```bash
+pytest tests/ -v
 ```
 
 The app runs at `http://localhost:5173`. API docs: `http://127.0.0.1:8000/docs`.

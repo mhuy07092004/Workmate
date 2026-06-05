@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect } from 'react'
-
 import Navbar from '../components/Navbar/Navbar.jsx'
 import Footer from '../components/Footer/Footer.jsx'
 import JobCard from '../components/JobCard/JobCard.jsx'
