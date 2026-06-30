@@ -1,4 +1,5 @@
 # Workmate
+
 A job-matching platform connecting candidates with employers through intelligent two-way matching.
 
 **Stack:** React 19 · React Router 7 · Vite 8 · TailwindCSS 4 · ESLint 9  
