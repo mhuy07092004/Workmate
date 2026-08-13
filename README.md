@@ -5,7 +5,7 @@ A job-matching platform connecting candidates with employers through intelligent
 **Stack:** React 19 · React Router 7 · Vite 8 · TailwindCSS 4 · ESLint 9  
 **Language:** JavaScript (JSX) · ES2022+
 
----
+--
 
 ## Repository Structure
 
