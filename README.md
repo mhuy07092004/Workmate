@@ -6,6 +6,7 @@ A job-matching platform connecting candidates with employers through intelligent
 **Language:** JavaScript (JSX) · ES2022+
 
 ---
+
 ## Repository Structure
 
 ```
