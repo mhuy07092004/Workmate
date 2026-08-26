@@ -1,4 +1,4 @@
-# Workmate
+# Workmat
 
 A job-matching platform connecting candidates with employers through intelligent two-way matching.
 
